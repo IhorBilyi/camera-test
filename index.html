@@ -1,6 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Crestline">
 <style>@media not ((min-width:520px) and (min-height:700px)){.scr{padding-top:env(safe-area-inset-top,0px)}.foot,.composer{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))!important}.camsheet{padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}.camtop{padding-top:calc(10px + env(safe-area-inset-top,0px))}}</style>
-</head><body><title>Crestline Home Inventory</title>
+</head><body>
+<title>Crestline Home Inventory</title>
 <style>
 /* Layout: one iPhone-sized app. Full screen on a phone, a centered 393x852 device on wider screens. Deliberately light-only, like the Figma design. */
 :root{
@@ -87,6 +88,7 @@ button:focus-visible,[data-act]:focus-visible{outline:2px solid var(--acc);outli
 .sw.on{background:#34C759}.sw.on::after{transform:translateX(20px)}
 .stepper{display:flex;align-items:center;background:var(--fill);border-radius:9px;height:32px;flex:none}
 .stepper button{width:40px;height:32px;display:flex;align-items:center;justify-content:center}
+.stepper button:active{opacity:.4}.stepper button:disabled{opacity:.3}
 .stepper span{min-width:18px;text-align:center;font-weight:600;font-size:15px}
 .badge{width:20px;height:20px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
 .ring0{display:block;width:20px;height:20px;border-radius:50%;border:1.5px solid #C7C7CC;flex:none}
@@ -357,7 +359,7 @@ const SCREENS={
    <div class="camctl"><div class="side"><button class="row g4 fn" style="color:#fff" data-act="toast:Say or type what the camera missed">${ic('plus',16,'#fff',2)}Add item</button></div><button class="rec" id="rec" data-act="rec" aria-label="Record"><i></i></button><div class="side"><button class="donebtn" data-act="scandone:${id}">Done</button></div></div></div>`},
   after:(el,id)=>{const r=ROOMS.find(x=>x.id===id);const clip=!!(r.clip&&S.clipUrl&&!S.videos[id]);const v=el.querySelector('#camv');if(v&&clip){v.muted=true;v.playsInline=true;v.setAttribute('webkit-playsinline','');v.src=S.clipUrl;v.load();}else if(v){if(S.stream){v.srcObject=S.stream;}else if(S.videos[id]||S.video){v.src=S.videos[id]||S.video;}v.play().catch(()=>{});}scanState={id,on:false,t:0,shown:0,n:0,vol:0,finished:false,clip};}},
  review:{html:id=>{const r=ROOMS.find(x=>x.id===id);const bed=!!r.checks;
-  const rows=r.items.map(([n,k,size,v,q,tags=[]])=>`<div class="grow-row" style="--inset:60px;min-height:60px">${tile(k,BG,SEC,32,8,18)}<div class="grow"><div class="bd">${n}</div><div class="row g6 fn sec" style="flex-wrap:wrap">${size} · ${v} cu ft${q>1?' each':''}${tags.filter(t=>!t.endsWith('?')).map(t=>`<span class="tag2 ${t==='Fragile'?'red':t==='High value'?'amber':'blue'}">${t}</span>`).join('')}</div></div><div class="stepper" style="height:28px"><button style="width:30px;height:28px" aria-label="Less">${ic('minus',14,'#1D1D1F',2)}</button><span class="num fnS">${q}</span><button style="width:30px;height:28px" aria-label="More">${ic('plus',14,'#1D1D1F',2)}</button></div></div>`).join('');
+  const rows=r.items.map(([n,k,size,v,q,tags=[]],ii)=>`<div class="grow-row" style="--inset:60px;min-height:60px">${tile(k,BG,SEC,32,8,18)}<div class="grow"><div class="bd">${n}</div><div class="row g6 fn sec" style="flex-wrap:wrap">${size} · ${v} cu ft${q>1?' each':''}${tags.filter(t=>!t.endsWith('?')).map(t=>`<span class="tag2 ${t==='Fragile'?'red':t==='High value'?'amber':'blue'}">${t}</span>`).join('')}</div></div><div class="stepper" style="height:28px"><button style="width:30px;height:28px" aria-label="Less" data-act="qty:${id}:${ii}:-1" ${q<1?'disabled':''}>${ic('minus',14,'#1D1D1F',2)}</button><span class="num fnS">${q}</span><button style="width:30px;height:28px" aria-label="More" data-act="qty:${id}:${ii}:1">${ic('plus',14,'#1D1D1F',2)}</button></div></div>`).join('');
   return `${nav('Retake','<span class="hl">'+r.name+'</span>',['Edit','toast:Tap any number to change it'])}<div class="body"><div class="stack g16" style="padding:8px 16px 24px">
   <div class="card row g12" style="padding:14px 16px">${tile('play','#3A3A3C','#fff',56,10,22)}<div class="grow"><div class="fnS acc row g4">${ic('sparkle',13,ACC,2.2)}AI draft · 0:${String(r.secs).padStart(2,'0')} video</div><div class="t3 num">${r.count} items · ≈ ${r.vol} cu ft</div><div class="fn sec">${bed?`Check ${r.checks.length} item${r.checks.length>1?'s':''}. A coordinator reviews the rest before your quote.`:'A coordinator reviews this list before your quote.'}</div></div></div>
   ${r.checks?`<div class="lbl" style="padding:0 16px">Needs your check <span class="tag2 amber" style="margin-left:4px">${r.checks.length}</span></div>
@@ -473,6 +475,7 @@ phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t|
   case 'rec':if(scanState&&scanState.clip){if(!scanState.on)startClip();else if(!scanState.finished)finishScan();}else if(scanState&&!scanState.on&&!S.stream&&!S.videos[scanState.id]&&!S.video){vc.value='';vc.click();}else if(scanState&&!scanState.on)startRec();else if(scanState&&!scanState.finished)finishScan();break;
   case 'scandone':if(scanState&&!scanState.finished){scanState.finished=true;}go('review',arg);break;
   case 'vidpick':{const now=Date.now();if(now-(t._last||0)<400){vp.click();}t._last=now;break;}
+  case 'qty':{const [rid,i,d]=arg.split(':');const r=ALL_ROOMS.find(x=>x.id===rid),it=r.items[+i],dd=+d;if(it[4]+dd<0)break;it[4]+=dd;r.count+=dd;r.vol=Math.max(0,Math.round((r.vol+dd*it[3])*10)/10);rerender();break;}
   case 'bq':{const [k,v]=arg.split(':');S.checks[k]=v;rerender();break;}
   case 'confirm':S.done.add(arg);go(ROOMS.length===1?'q1':'rooms');hist=[];toast(ROOMS.find(r=>r.id===arg).name+' saved');break;
   case 'q1':S.q1=arg;go('q2');break;
@@ -482,10 +485,10 @@ phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t|
   case 'restart':restart();break;
  }
 });
-function restart(){S.done=new Set();S.rooms=new Set(['living']);syncRooms();S.q1=null;S.voice=false;S.frag={acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1};S.checks={dresser:'Dresser',mirror:'Moving',light:'Staying'};S.apart={shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'};hist=[];curName='';go('sms');}
+function restart(){ALL_ROOMS.forEach(r=>{r.items.forEach((it,i)=>it[4]=r._q[i]);r.count=r._c;r.vol=r._v;});S.done=new Set();S.rooms=new Set(['living']);syncRooms();S.q1=null;S.voice=false;S.frag={acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1};S.checks={dresser:'Dresser',mirror:'Moving',light:'Staying'};S.apart={shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'};hist=[];curName='';go('sms');}
 // dev shortcut: open #rooms, #q1, #ready etc. to jump straight to a stage
 try{fetch('living.mp4').then(r=>r.ok?r.blob():null).then(b=>{if(b&&b.size>1000)S.clipUrl=URL.createObjectURL(b.type==='video/mp4'?b:new Blob([b],{type:'video/mp4'}));}).catch(()=>{});}catch(e){}
-syncRooms();
+ALL_ROOMS.forEach(r=>{r._q=r.items.map(it=>it[4]);r._c=r.count;r._v=r.vol;});syncRooms();
 const start=(location.hash||'').slice(1);
 if(start==='q1'||start==='ready'||start==='quote'){ROOMS.forEach(r=>S.done.add(r.id));S.q1='Yes, both';}
 if(start==='scan')go('scan','living');else go(SCREENS[start]&&start!=='review'?start:'sms');
