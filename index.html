@@ -1,0 +1,455 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Crestline">
+<style>@media not ((min-width:520px) and (min-height:700px)){.scr{padding-top:env(safe-area-inset-top,0px)}.foot,.composer{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))!important}.camsheet{padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}.camtop{padding-top:calc(10px + env(safe-area-inset-top,0px))}}</style>
+</head><body><title>Crestline Home Inventory</title>
+<style>
+/* Layout: one iPhone-sized app. Full screen on a phone, a centered 393x852 device on wider screens. Deliberately light-only, like the Figma design. */
+:root{
+  --bg:#F2F2F7; --card:#FFFFFF; --ink:#1D1D1F; --sec:#6E6E73; --ter:#AEAEB2; --sep:#E3E3E8;
+  --acc:#0A6CFF; --accBg:#EAF2FF; --ok:#1E9E4A; --okBg:#E6F6EC; --warn:#C25E00; --warnBg:#FFF1E0; --fill:#E9E9EE;
+  --desk:#DCDCE3;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{margin:0;background:var(--desk);font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-user-select:none;user-select:none}
+button:focus-visible,[data-act]:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#stage{height:100%;display:flex;align-items:center;justify-content:center}
+.phone{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
+.sb{display:none}
+@media (min-width:520px) and (min-height:700px){
+  .phone{width:393px;height:852px;max-height:calc(100% - 32px);border-radius:52px;box-shadow:0 0 0 10px #111,0 30px 80px rgba(0,0,0,.25)}
+  .sb{display:flex;position:absolute;left:0;right:0;top:0;height:50px;z-index:50;align-items:center;justify-content:space-between;padding:6px 32px 0 40px;font-weight:600;font-size:16px;pointer-events:none}
+  .sb.dark{color:#fff}
+  .scr{padding-top:50px}
+  .scr.cam{padding-top:0}
+}
+.sb .r{display:flex;gap:6px;align-items:center}
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .32s}
+.scr.white{background:#fff}
+.scr.enter{transform:translateX(100%)}
+.scr.back-enter{transform:translateX(-30%);opacity:.6}
+.scr.leave{transform:translateX(-30%);opacity:.6}
+.scr.back-leave{transform:translateX(100%)}
+@media (prefers-reduced-motion:reduce){.scr{transition:none}}
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+.pad{padding:0 16px 24px}
+.stack{display:flex;flex-direction:column}
+.g4{gap:4px}.g6{gap:6px}.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}.g16{gap:16px}.g20{gap:20px}.g24{gap:24px}.g28{gap:28px}
+.row{display:flex;align-items:center}
+.grow{flex:1;min-width:0}
+/* type */
+.lt{font-size:34px;font-weight:700;letter-spacing:.4px;line-height:41px}
+.t1{font-size:28px;font-weight:700;letter-spacing:.38px;line-height:34px;text-wrap:balance}
+.t3{font-size:20px;font-weight:600;letter-spacing:-.45px}
+.hl{font-size:17px;font-weight:600;letter-spacing:-.43px;line-height:22px}
+.bd{font-size:17px;letter-spacing:-.43px;line-height:22px}
+.sub{font-size:15px;letter-spacing:-.23px;line-height:20px}
+.subM{font-size:15px;font-weight:500;letter-spacing:-.23px;line-height:20px}
+.subS{font-size:15px;font-weight:600;letter-spacing:-.23px;line-height:20px}
+.fn{font-size:13px;letter-spacing:-.08px;line-height:18px}
+.fnM{font-size:13px;font-weight:500;letter-spacing:-.08px;line-height:18px}
+.fnS{font-size:13px;font-weight:600;letter-spacing:-.08px;line-height:18px}
+.cap{font-size:12px;line-height:16px}
+.c2{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase}
+.sec{color:var(--sec)}.ter{color:var(--ter)}.acc{color:var(--acc)}.okc{color:var(--ok)}.warnc{color:var(--warn)}
+.num{font-variant-numeric:tabular-nums}
+.center{text-align:center}
+/* nav */
+.nav{height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 8px;position:relative}
+.nav .back{display:flex;align-items:center;gap:2px;color:var(--acc);font-size:17px;letter-spacing:-.43px;height:44px;padding-right:8px}
+.nav .mid{position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}
+.nav .right{color:var(--acc);font-size:17px;padding:0 8px}
+.prog{display:flex;gap:6px;padding:2px 24px 0;flex:none}
+.prog i{flex:1;height:4px;border-radius:2px;background:#DCDCE2}
+.prog i.on{background:var(--acc)}
+/* surfaces */
+.card{background:var(--card);border-radius:14px}
+.group{background:var(--card);border-radius:14px;overflow:hidden}
+.grow-row{display:flex;align-items:center;gap:12px;padding:10px 14px 10px 16px;min-height:52px;position:relative;width:100%;text-align:left}
+.grow-row+.grow-row::before{content:"";position:absolute;top:0;right:0;left:var(--inset,48px);height:.5px;background:var(--sep)}
+.tile{display:flex;align-items:center;justify-content:center;flex:none;border-radius:9px}
+.lbl{padding:0 16px 8px;font-size:13px;color:var(--sec);text-transform:uppercase;letter-spacing:-.08px}
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:14px;width:100%;font-size:17px;font-weight:600;letter-spacing:-.43px;transition:transform .12s,opacity .12s}
+.btn:active{transform:scale(.98);opacity:.9}
+.btn.primary{background:var(--acc);color:#fff}
+.btn.tinted{background:var(--accBg);color:var(--acc)}
+.btn.plain{color:var(--acc);font-weight:400;height:40px}
+.btn.opt{height:44px;border-radius:12px;background:var(--accBg);color:var(--acc);font-size:15px;letter-spacing:-.23px}
+.foot{flex:none;background:rgba(249,249,251,.86);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:.5px solid rgba(0,0,0,.12);padding:12px 16px;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+@media (min-width:520px) and (min-height:700px){.foot{padding-bottom:34px}}
+.foot .meta{text-align:center}
+/* switch & stepper */
+.sw{width:51px;height:31px;border-radius:16px;background:#E9E9EA;position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:transform .2s}
+.sw.on{background:#34C759}.sw.on::after{transform:translateX(20px)}
+.stepper{display:flex;align-items:center;background:var(--fill);border-radius:9px;height:32px;flex:none}
+.stepper button{width:40px;height:32px;display:flex;align-items:center;justify-content:center}
+.stepper span{min-width:18px;text-align:center;font-weight:600;font-size:15px}
+.badge{width:20px;height:20px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
+.ring0{width:20px;height:20px;border-radius:50%;border:1.5px solid #C7C7CC;flex:none}
+/* options */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.opt{display:flex;align-items:center;gap:10px;height:60px;padding:0 12px;border-radius:14px;background:var(--card);text-align:left;box-shadow:inset 0 0 0 0 var(--acc);transition:box-shadow .15s}
+.opt.sel{box-shadow:inset 0 0 0 2px var(--acc)}
+/* sms */
+.smshead{flex:none;background:rgba(247,247,249,.94);border-bottom:.5px solid rgba(0,0,0,.1);height:92px;position:relative;display:flex;flex-direction:column;align-items:center;padding-top:6px}
+.smshead .bk{position:absolute;left:8px;top:8px;color:var(--acc)}
+.av{width:48px;height:48px;border-radius:50%;background:linear-gradient(#A8ADB8,#848A97);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600}
+.bub{background:#E9E9EB;border-radius:18px;padding:9px 14px;max-width:282px;font-size:17px;line-height:22px;letter-spacing:-.43px}
+.lp{width:282px;border-radius:18px;overflow:hidden;background:#E9E9EB;text-align:left;display:block;transition:transform .12s}
+.lp:active{transform:scale(.98)}
+.lp .img{height:150px;background:linear-gradient(#0A6CFF,#0048B8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff}
+.lp .ic{width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.composer{flex:none;display:flex;gap:8px;align-items:center;padding:8px 12px 10px;background:#fff}
+@media (min-width:520px) and (min-height:700px){.composer{padding-bottom:40px}}
+.field{flex:1;height:36px;border-radius:18px;border:1px solid #D1D1D6;display:flex;align-items:center;padding:0 14px;color:var(--ter);font-size:17px}
+/* overview */
+.ringbox{position:relative;width:52px;height:52px;flex:none}
+.ringbox span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.bars{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.bars i{height:4px;border-radius:2px;background:#E5E5EA}
+.bars i.done{background:var(--ok)}.bars i.next{background:#BCD6FF}
+.bars b{font-size:11px;font-weight:400;color:var(--ter);text-align:center}
+.bars b.next{color:var(--acc);font-weight:600}
+.upnext{display:flex;align-items:center;gap:14px;padding:18px 16px;border-radius:16px;background:#fff;box-shadow:inset 0 0 0 1px #BCD6FF;text-align:left;width:100%}
+.check{width:22px;height:22px;border-radius:50%;background:var(--ok);display:flex;align-items:center;justify-content:center;flex:none}
+/* camera */
+.cam{background:#0B0B0C;color:#fff}
+.scene{position:absolute;inset:0;overflow:hidden}
+.scene video{width:100%;height:100%;object-fit:cover}
+.scene .wall{position:absolute;inset:0 0 38% 0}
+.scene .floor{position:absolute;inset:62% 0 0 0}
+.scene .win{position:absolute;border-radius:6px;background:linear-gradient(#FDF6E3,#F1E2C3);box-shadow:0 0 60px rgba(255,240,200,.45)}
+.scene .f{position:absolute;border-radius:10px;filter:blur(.6px)}
+.scene .shade{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 55%,rgba(0,0,0,.55))}
+.camtop{position:absolute;top:0;left:0;right:0;z-index:5;padding:10px 14px 0;display:flex;flex-direction:column;align-items:center;gap:10px}
+@media (min-width:520px) and (min-height:700px){.camtop{padding-top:58px}}
+.camtop .x{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center}
+.recdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#FF3B30;margin-right:6px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+.pill{background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-radius:16px;padding:6px 12px;font-size:13px;font-weight:500}
+.det{position:absolute;z-index:4;transform:translate(-50%,-50%) scale(.8);opacity:0;transition:opacity .35s,transform .35s cubic-bezier(.2,1.4,.4,1)}
+.det.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.det .box{width:var(--w);height:var(--h);border-radius:14px;border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.det.warn .box{border-color:#FFB54D}
+.det .tag{position:absolute;left:8px;top:-14px;white-space:nowrap;background:rgba(255,255,255,.92);color:var(--ink);font-size:12px;font-weight:600;border-radius:8px;padding:3px 8px;display:flex;gap:4px;align-items:center}
+.det.warn .tag{background:#FFB54D;color:#3A2100}
+.camsheet{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:14px 16px 18px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.55) 30%);display:flex;flex-direction:column;gap:14px}
+@media (min-width:520px) and (min-height:700px){.camsheet{padding-bottom:40px}}
+.chips{display:flex;gap:8px;overflow:hidden;min-height:40px}
+.chip{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none;animation:pop .3s}
+.chip.warn{background:rgba(255,181,77,.3);box-shadow:inset 0 0 0 1.5px #FFB54D}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.rec{width:72px;height:72px;border-radius:50%;border:4px solid #fff;display:flex;align-items:center;justify-content:center}
+.rec i{width:56px;height:56px;border-radius:50%;background:#FF3B30;transition:all .25s}
+.rec.on i{width:28px;height:28px;border-radius:7px}
+.camctl{display:flex;align-items:center;justify-content:space-between}
+.camctl .side{width:96px;display:flex}
+.donebtn{background:#fff;color:var(--ink);border-radius:18px;padding:8px 18px;font-weight:600;font-size:15px;margin-left:auto}
+/* review */
+.qbox{background:var(--card);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.seg{display:flex;background:var(--fill);border-radius:9px;padding:2px}
+.seg button{flex:1;height:30px;border-radius:7px;font-size:13px;color:var(--sec)}
+.seg button.sel{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.tag2{font-size:11px;font-weight:600;border-radius:5px;padding:1px 5px}
+.tag2.blue{background:var(--accBg);color:var(--acc)}.tag2.red{background:#FFE9E7;color:#D12B1F}.tag2.amber{background:var(--warnBg);color:var(--warn)}
+/* chat */
+.thread{display:flex;flex-direction:column;gap:12px;padding:12px 16px 20px}
+.ab{display:flex;gap:8px;align-items:flex-end;animation:rise .35s}
+.ab .bb{background:#fff;border-radius:18px 18px 18px 6px;padding:9px 13px;max-width:296px;font-size:15px;line-height:20px;letter-spacing:-.23px}
+.ub{align-self:flex-end;background:var(--acc);color:#fff;border-radius:18px 18px 6px 18px;padding:9px 14px;font-size:15px;line-height:20px;letter-spacing:-.23px;max-width:300px;animation:rise .35s}
+.conf{display:flex;gap:6px;justify-content:center;align-items:center;animation:rise .35s}
+@keyframes rise{from{transform:translateY(8px);opacity:0}}
+.qc{background:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 16px rgba(0,0,0,.05);animation:rise .35s}
+.items3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.it{position:relative;height:88px;border-radius:12px;background:var(--bg);padding:10px;display:flex;flex-direction:column;justify-content:space-between;text-align:left}
+.it.sel{background:var(--accBg);box-shadow:inset 0 0 0 1.5px var(--acc)}
+.it.add{background:none;box-shadow:inset 0 0 0 1.2px #C7C7CC;border-radius:12px}
+.it .mk{position:absolute;top:10px;right:10px}
+.mic{width:38px;height:38px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
+.mic.live{animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(10,108,255,.2)}}
+.wave{display:flex;gap:2.5px;align-items:center}
+.wave i{width:2.5px;border-radius:2px;background:rgba(255,255,255,.9)}
+/* alert */
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.alert{width:270px;border-radius:14px;background:rgba(242,242,242,.92);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px);overflow:hidden;text-align:center;animation:zoom .25s}
+@keyframes zoom{from{transform:scale(1.15);opacity:0}}
+.alert .ab2{display:flex;border-top:.5px solid rgba(60,60,67,.29)}
+.alert .ab2 button{flex:1;height:44px;color:#007AFF;font-size:17px}
+.alert .ab2 button+button{border-left:.5px solid rgba(60,60,67,.29);font-weight:600}
+.hint{width:270px;background:rgba(28,28,30,.9);color:#fff;border-radius:14px;padding:12px 16px;font-size:15px;line-height:20px;text-align:center}
+/* misc */
+.toast{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);background:rgba(28,28,30,.92);color:#fff;border-radius:14px;padding:10px 16px;font-size:14px;z-index:80;white-space:nowrap;animation:fade .2s}
+.hero{width:88px;height:88px;border-radius:50%;background:var(--okBg);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.tl{background:var(--bg);border-radius:18px;padding:18px 16px}
+.tlr{display:flex;gap:14px}
+.rail{display:flex;flex-direction:column;align-items:center;width:22px;flex:none}
+.dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.dot.done{background:var(--ok)}.dot.now{background:#fff;box-shadow:inset 0 0 0 2px var(--acc)}.dot.next{background:#fff;box-shadow:inset 0 0 0 1.5px #C7C7CC}
+.rail i{width:2px;height:26px;background:#D6D6DC}.rail i.done{background:var(--ok)}
+.price{border-radius:20px;padding:20px 20px 18px;background:linear-gradient(#0A6CFF,#0050D0);color:#fff;display:flex;flex-direction:column;gap:14px}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat3 div{background:rgba(255,255,255,.16);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+input[type=file]{display:none}
+</style>
+
+<div id="stage"><div class="phone" id="phone">
+  <div class="sb" id="sb"><span>9:41</span><span class="r"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 4.5a9.5 9.5 0 0 1 13 0M4 7.2a6 6 0 0 1 8 0"/><circle cx="8" cy="10" r="1" fill="currentColor"/></svg><svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="19" height="8" rx="2" fill="currentColor"/><rect x="24" y="4" width="1.5" height="4" rx=".75" fill="currentColor" opacity=".4"/></svg></span></div>
+</div></div>
+<input type="file" id="vidpick" accept="video/*">
+<input type="file" id="vidcap" accept="video/*" capture="environment">
+
+<script>
+(function(){
+const P={chevL:'<path d="m15 18-6-6 6-6"/>',chevR:'<path d="m9 18 6-6-6-6"/>',check:'<path d="M20 6 9 17l-5-5"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',
+house:'<path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-6h6v6"/>',camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',sparkle:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/>',clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',cloud:'<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',device:'<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
+pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',cal:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',bed:'<path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>',stairs:'<path d="M3 20h4v-4h4v-4h4V8h4V4"/>',building:'<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>',town:'<path d="M2 21V10l5-4 5 4v11M12 21V10l5-4 5 4v11M2 21h20"/>',box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+bulb:'<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/>',drawer:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18M10 7.5h4M10 16.5h4"/>',loop:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',eyeoff:'<path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-3.2 4.2M6.6 6.6C3.6 8.5 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/>',lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+wine:'<path d="M8 22h8M12 15v7M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/>',gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6M2 9h20"/>',tool:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',tv:'<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/>',mirror:'<ellipse cx="12" cy="11" rx="6" ry="8"/><path d="M9 21h6"/>',lamp:'<path d="M8 2h8l4 10H4L8 2Z"/><path d="M12 12v6"/><path d="M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z"/>',frame:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="9" cy="8" r="1.5"/>',washer:'<rect width="16" height="20" x="4" y="2" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6h.01M11 6h.01"/>',wardrobe:'<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M12 2v20M10 12h.01M14 12h.01"/>',bunk:'<path d="M4 3v18M20 3v18M4 8h16M4 16h16M4 12h16"/>',table:'<path d="M3 8h18M5 8v12M19 8v12M3 8l2-3h14l2 3"/>',mic:'<rect width="6" height="12" x="9" y="2" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/>',play:'<path d="M7 4v16l13-8z"/>',
+truck:'<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',sofa:'<path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z"/><path d="M4 18v2M20 18v2"/>',utensils:'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>',smile:'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/>',garage:'<path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12M6 14h12"/><rect width="12" height="12" x="6" y="10"/>',archive:'<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+bike:'<circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h2l3 11.5M5.5 17.5 9 10h7l2.5 7.5M9 10 7.5 6H6"/>',fridge:'<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M5 10h14M9 5v2M9 13v3"/>',chair:'<path d="M6 21v-8h12v8M6 13V4h12v9M6 17h12"/>',laptop:'<rect width="18" height="12" x="3" y="4" rx="2"/><path d="M2 20h20"/>',suitcase:'<rect width="16" height="13" x="4" y="7" rx="2"/><path d="M9 7V4h6v3M8 20v1M16 20v1"/>',rug:'<rect width="18" height="12" x="3" y="6" rx="1"/><path d="M3 9h18M3 15h18"/>',shelf:'<path d="M4 3v18M20 3v18M4 9h16M4 15h16M4 21h16"/>',phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>'};
+const ic=(k,s=20,c='currentColor',w=1.75)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[k]||''}</svg>`;
+const tile=(k,bg,fg,s=36,r=9,i=20)=>`<span class="tile" style="width:${s}px;height:${s}px;border-radius:${r}px;background:${bg}">${ic(k,i,fg)}</span>`;
+const V=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const ACC='#0A6CFF',ACCBG='#EAF2FF',SEC='#6E6E73',BG='#F2F2F7',OK='#1E9E4A',OKBG='#E6F6EC',WARN='#C25E00';
+
+// ---------- data ----------
+const ROOMS=[
+ {id:'living',name:'Living room',short:'Living',icon:'sofa',tc:'#E6F6EC',tf:'#1E9E4A',tip:'Start at the door and end where you began.',secs:41,
+  items:[['Sofa, 3-seat','sofa','Large',35,1,['apart?']],['Armchair','sofa','Medium',12,1],['Bookshelf','shelf','Large',17,1],['TV stand','tv','Medium',10,1],['Coffee table','table','Medium',8,1],['Side table','table','Small',3,2],['Rug','rug','Medium',5,1],['Floor lamp','lamp','Small',3,1,['Fragile']],['Artwork','frame','Small',1,3],['Boxes of books','box','Medium',1.5,2]],
+  dets:[['Sofa',28,60,150,80],['Floor lamp',80,34,46,120],['TV stand',58,64,110,50],['Bookshelf',14,36,70,130]],
+  scene:{wall:'linear-gradient(#C9B9A3,#B7A68E)',floor:'linear-gradient(#8C6E52,#6E533C)',win:[58,14,26,26],f:[[8,48,40,26,'#5E6B78'],[70,22,6,40,'#E8D9B5'],[46,58,26,10,'#4A3B2E'],[4,20,18,40,'#7A5A3E']]}},
+ {id:'kitchen',name:'Kitchen',short:'Kitchen',icon:'utensils',tc:'#E6F6EC',tf:'#1E9E4A',tip:'Open the cabinets as you go.',secs:56,
+  items:[['Fridge','fridge','Large',45,1],['Shelving unit','shelf','Large',38,1],['Dining table','table','Large',30,1,['Take apart']],['Dining chair','chair','Medium',5,4],['Bar stool','chair','Small',4,2],['Microwave','box','Small',3,1],['Glassware','wine','Medium',3,2,['Fragile']],['Kitchen boxes','box','Medium',6,10]],
+  dets:[['Fridge',16,42,80,170],['Dining table',58,66,150,60],['Chairs',82,70,60,70],['Shelving',42,30,70,90]],
+  scene:{wall:'linear-gradient(#DADDE0,#C6CACE)',floor:'linear-gradient(#9C9A96,#7E7C78)',win:[60,10,24,22],f:[[6,22,20,52,'#E9ECEE'],[40,58,40,12,'#7A5E44'],[76,60,12,18,'#5D4A38'],[34,18,18,26,'#B9BEC2']]}},
+ {id:'bedroom',name:'Bedroom',short:'Bedroom',icon:'bed',tc:'#EAF2FF',tf:'#0A6CFF',tip:'Open the wardrobe as you film.',secs:52,
+  items:[['Queen bed','bed','Large',65,1,['Take apart']],['Wardrobe','wardrobe','Large',40,1,['Take apart']],['Dresser','drawer','Large',25,1],['Nightstand','drawer','Small',5,2],['TV, 55 inch','tv','Medium',10,1,['Fragile','High value']],['Floor mirror','mirror','Small',5,1,['Fragile']],['Table lamp','lamp','Small',3,1,['Fragile']],['Suitcase','suitcase','Medium',4,2],['Laundry basket','archive','Small',2,1]],
+  dets:[['Queen bed',58,62,170,90],['Nightstand',14,60,60,56],['Mirror',38,32,46,110],['Dresser?',82,48,70,90,1]],
+  scene:{wall:'linear-gradient(#D7CBBE,#C4B6A6)',floor:'linear-gradient(#9B7B5D,#7B5E44)',win:[56,10,22,24],f:[[38,54,44,18,'#ECE6DD'],[6,54,14,14,'#6D5440'],[33,16,10,34,'#D8E1E8'],[72,36,22,30,'#7E644C']]}},
+ {id:'kids',name:'Kids’ room',short:'Kids',icon:'smile',tc:'#F0F0F4',tf:'#6E6E73',tip:'Toy boxes count, a rough number is fine.',secs:38,
+  items:[['Bunk bed','bunk','Large',30,1,['Take apart']],['Desk','laptop','Medium',10,1],['Dresser, small','drawer','Medium',10,1],['Bookshelf, small','shelf','Medium',8,1],['Desk chair','chair','Small',4,1],['Beanbag','sofa','Small',4,1],['Toy box','box','Small',2,7],['Rug','rug','Small',3,1],['Desk lamp','lamp','Small',1,1]],
+  dets:[['Bunk bed',26,44,110,170],['Desk',70,60,100,60],['Toy boxes',46,76,90,40]],
+  scene:{wall:'linear-gradient(#C9DCE6,#B3CAD6)',floor:'linear-gradient(#A88E6E,#8A7255)',win:[62,10,22,22],f:[[10,22,30,52,'#E8C27A'],[56,56,30,12,'#F2F2F2'],[36,70,22,8,'#E07A5F']]}},
+ {id:'garage',name:'Garage & storage',short:'Garage',icon:'garage',tc:'#FFF1E0',tf:'#C25E00',tip:'Shelves and corners hide the most.',secs:44,
+  items:[['Bike','bike','Medium',6,2],['Tool chest','tool','Medium',9,1],['Lawn mower','tool','Medium',8,1],['Grill','sun','Medium',6,1],['Storage box','box','Medium',3,6],['Folding chair','chair','Small',1,3]],
+  dets:[['Bikes',20,56,100,80],['Tool chest',72,54,70,80],['Boxes',46,36,100,60],['Grill',84,74,50,50]],
+  scene:{wall:'linear-gradient(#B9BBBD,#A2A5A8)',floor:'linear-gradient(#7C7D7F,#5F6062)',win:[40,8,20,10],f:[[8,50,26,20,'#3E4650'],[64,42,18,24,'#B23A30'],[34,26,30,16,'#C9A877'],[78,66,12,12,'#2E2E30']]}}
+];
+ROOMS.forEach(r=>{r.count=r.items.reduce((a,i)=>a+i[4],0);r.vol=Math.round(r.items.reduce((a,i)=>a+i[3]*i[4],0));});
+
+const S={home:'House',beds:2,stairs:true,done:new Set(),q1:null,frag:{tv:1,mirror:1,lamps:1,glass:1,art:0},apart:{bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'},voice:false,stream:null,camTried:false,video:null,videos:{},bedQ:{dresser:'Dresser',mirror:'Moving'}};
+
+// ---------- router ----------
+const phone=document.getElementById('phone'),sb=document.getElementById('sb');
+let cur=null,curName='',hist=[],timers=[];
+function clearTimers(){timers.forEach(t=>{clearTimeout(t);clearInterval(t)});timers=[];}
+function go(name,arg,back){
+  clearTimers();
+  const def=SCREENS[name];const el=document.createElement('section');
+  el.className='scr '+(def.cls||'');el.innerHTML=def.html(arg);
+  el.dataset.name=name;
+  sb.classList.toggle('dark',!!def.dark);
+  const old=cur;
+  if(old){el.classList.add(back?'back-enter':'enter');}
+  phone.appendChild(el);
+  if(def.after)def.after(el,arg);
+  if(old){requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.remove('enter','back-enter');old.classList.add(back?'back-leave':'leave');setTimeout(()=>old.remove(),340);}));}
+  if(!back&&curName)hist.push([curName,curArg]);
+  cur=el;curName=name;curArg=arg;
+}
+let curArg;
+function goBack(){const h=hist.pop();if(h){const [n,a]=h;go(n,a,true);}}
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;phone.appendChild(d);setTimeout(()=>d.remove(),2200);}
+function rerender(){const def=SCREENS[curName];const sc=cur.querySelector('.body')?.scrollTop||0;cur.innerHTML=def.html(curArg);if(def.after)def.after(cur,curArg,true);const b=cur.querySelector('.body');if(b)b.scrollTop=sc;}
+
+// ---------- pieces ----------
+const nav=(back,mid,right)=>`<div class="nav">${back?`<button class="back" data-act="back">${ic('chevL',24,ACC,2.2)}${back}</button>`:'<span></span>'}${mid?`<div class="mid">${mid}</div>`:''}${right?`<button class="right" data-act="${right[1]}">${right[0]}</button>`:'<span></span>'}</div>`;
+const prog=(n,of)=>`<div class="prog">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`;
+const btn=(label,act,kind='primary',icon)=>`<button class="btn ${kind}" data-act="${act}">${icon?ic(icon,20,'currentColor',2):''}${label}</button>`;
+const sms=(quote)=>`
+ <div class="smshead"><span class="bk">${ic('chevL',26,ACC,2.2)}</span><div class="av">C</div><div class="cap" style="margin-top:3px;display:flex;align-items:center;gap:2px">Crestline Moving ${ic('chevR',10,'#AEAEB2',2.5)}</div></div>
+ <div class="body"><div class="stack g4" style="padding:16px">
+  <div class="cap center" style="color:#AEAEB2;font-weight:500">Text Message · ${quote?'Mon 10:24':'Today 10:24'}</div><div style="height:8px"></div>
+  <div class="bub">Hi Ihor, this is Sam, your coordinator at Crestline. To prepare your quote, could you show us your home in a few short videos? It takes about 10 minutes, no app needed.</div>
+  <button class="lp" data-act="${quote?'':'open-welcome'}" ${quote?'disabled':''}><div class="img"><span class="ic">${ic('house',30,'#fff')}</span><span class="subS">Your moving inventory</span></div><div style="padding:9px 12px 10px"><div class="fnS">Show us your home, get your quote</div><div class="fn sec">crestline.com</div></div></button>
+  ${quote?`<div style="height:14px"></div><div class="cap center" style="color:#AEAEB2;font-weight:500">Text Message · Wed 9:05</div><div style="height:8px"></div>
+  <div class="bub">Hi Ihor, Sam again. Thanks for the videos, everything checked out. Your quote is ready: $3,480 for Thu, 14 Nov, with 3 movers and a 26 ft truck.</div>
+  <button class="lp" data-act="open-quote"><div class="img"><span class="ic">${ic('house',30,'#fff')}</span><span class="subS">Your quote · $3,480</span></div><div style="padding:9px 12px 10px"><div class="fnS">Review and book your move</div><div class="fn sec">crestline.com</div></div></button>`:''}
+ </div></div>
+ <div class="composer"><span class="tile" style="width:34px;height:34px;border-radius:17px;background:#EFEFF2">${ic('plus',18,SEC,2)}</span><div class="field">Text Message</div></div>`;
+const helperNav=q=>nav('Rooms',`<div class="hl">Moving helper</div><div class="cap sec">Question ${q} of 4</div>`)+`<div style="display:flex;gap:4px;width:120px;margin:4px auto 0">${[1,2,3,4].map(i=>`<i style="flex:1;height:3px;border-radius:2px;background:${i<=q?ACC:'#D6D6DC'}"></i>`).join('')}</div>`;
+const AB=t=>`<div class="ab"><span class="tile" style="width:28px;height:28px;border-radius:14px;background:${ACC}">${ic('sparkle',15,'#fff',2)}</span><div class="bb">${t}</div></div>`;
+const UB=t=>`<div class="ub">${t}</div>`;
+const CONF=(t,undo='')=>`<div class="conf">${ic('check',14,OK,2.6)}<span class="fn sec">${t}</span>${undo?`<button class="fnS acc" data-act="${undo}">Undo</button>`:''}</div>`;
+const QC=(label,col,k,q,sub,inner)=>`<div class="qc"><div class="row g6">${ic(k,14,col,2.2)}<span class="c2" style="color:${col}">${label}</span></div><div class="stack g4"><div class="hl">${q}</div>${sub?`<div class="fn sec">${sub}</div>`:''}</div>${inner}</div>`;
+const composer=()=>`<div class="foot" style="flex-direction:row;align-items:center;gap:8px"><div class="field" style="background:#fff;border-width:.5px;height:38px;font-size:15px">Message, or hold to talk</div><button class="mic" data-act="mic">${ic('mic',19,'#fff',2)}</button></div>`;
+
+function totals(){const extra=S.q1==='Yes, both'?2:S.q1==='Only the washer'?1:0;const items=ROOMS.reduce((a,r)=>a+r.count,0)+extra,vol=ROOMS.reduce((a,r)=>a+r.vol,0)+extra*10;
+ const fr=S.frag.tv+S.frag.mirror+S.frag.lamps*2+S.frag.glass*2+S.frag.art*3;const ap=Object.values(S.apart).filter(v=>v!=='No need').length;return {items,vol,fr,ap,extra};}
+
+// ---------- screens ----------
+const SCREENS={
+ sms:{cls:'white',html:()=>sms(false)},
+ welcome:{cls:'white',html:()=>`<div class="body"><div class="stack g28" style="padding:36px 24px 24px">
+  <div class="row g8"><span class="tile" style="width:28px;height:28px;border-radius:8px;background:${ACC}">${ic('house',16,'#fff',2)}</span><span class="subS">Crestline Moving</span></div>
+  <div class="stack g10"><div class="t1">Hi Ihor, let’s take stock of your home</div><div class="bd sec" style="line-height:24px">Film each room, we draft the list, you check it. Your coordinator Sam takes it from there.</div></div>
+  <div class="group" style="background:${BG};border-radius:18px">${[['house','Tell us about your move','1 min'],['camera','Film each room','about 2 min a room'],['sparkle','Check what we found','2 min']].map(([k,t,m],i)=>`<div class="grow-row" style="--inset:70px;padding:14px 16px;gap:14px">${tile(k,'#fff',ACC,40,10,22)}<div class="grow"><div class="hl">${t}</div><div class="fn sec">${m}</div></div><span class="fnS ter">${i+1}</span></div>`).join('')}</div>
+  <div class="stack g10">${[['clock','About 10 minutes in total'],['cloud','Saves as you go, stop anytime'],['device','Works in your browser, no app']].map(([k,t])=>`<div class="row g10 sec">${ic(k,18,SEC)}<span class="sub">${t}</span></div>`).join('')}</div>
+ </div></div><div class="foot" style="background:#fff;border:0">${btn('Get started','go:move')}<div class="fn sec center" style="margin-top:6px">Videos are only used to prepare your quote.</div></div>`},
+ move:{html:()=>`${nav('Back','<span class="fnS sec">Step 1 of 2</span>')}${prog(1,2)}<div class="body"><div class="stack g20" style="padding:14px 16px 24px">
+  <div class="stack g6" style="padding:0 8px"><div class="t1">Your move</div><div class="sub sec">We filled this in from your booking. Tap anything that’s off.</div></div>
+  <div class="group">${[['pin','From','2150 W Roscoe St, Chicago'],['pin','To','1640 Wynkoop St, Denver'],['cal','Moving day','Thu, 14 Nov']].map(([k,l,v])=>`<button class="grow-row" data-act="toast:Editing comes in the full version">${ic(k,20,ACC)}<div class="grow"><div class="fn sec">${l}</div><div class="bd">${v}</div></div>${ic('chevR',16,'#AEAEB2',2.2)}</button>`).join('')}</div>
+  <div class="stack g8"><div class="lbl" style="padding-bottom:0">What are you moving out of?</div><div class="opts">${[['building','Apartment'],['house','House'],['town','Townhouse'],['box','Storage only']].map(([k,l])=>{const s=S.home===l;return `<button class="opt ${s?'sel':''}" data-act="home:${l}">${tile(k,s?ACCBG:BG,s?ACC:SEC,34,9,19)}<span class="grow ${s?'subS':'subM'}">${l}</span>${s?`<span class="badge">${ic('check',12,'#fff',3)}</span>`:''}</button>`}).join('')}</div></div>
+  <div class="group"><div class="grow-row">${ic('bed',20,ACC)}<span class="bd grow">Bedrooms</span><div class="stepper"><button data-act="beds:-1" aria-label="Fewer bedrooms">${ic('minus',16,'#1D1D1F',2)}</button><span class="num">${S.beds}</span><button data-act="beds:1" aria-label="More bedrooms">${ic('plus',16,'#1D1D1F',2)}</button></div></div>
+  <button class="grow-row" data-act="stairs">${ic('stairs',20,ACC)}<div class="grow"><div class="bd">Stairs at either home</div><div class="fn sec">Helps us plan the crew</div></div><span class="sw ${S.stairs?'on':''}"></span></button></div>
+ </div></div><div class="foot">${btn('Continue','go:tips')}</div>`},
+ tips:{html:()=>`${nav('Back','<span class="fnS sec">Step 2 of 2</span>')}${prog(2,2)}<div class="body"><div class="stack g20" style="padding:14px 16px 24px">
+  <div class="stack g6" style="padding:0 8px"><div class="t1">A few tips before you film</div><div class="sub sec">Each room takes about two minutes.</div></div>
+  <div class="group">${[['bulb','Turn on the lights','Brighter rooms mean fewer missed items'],['drawer','Open closets and cabinets','What’s inside counts toward your quote'],['loop','One slow loop per room','Start at the door and end where you began'],['eyeoff','Skip what’s staying','You can mark items as staying later']].map(([k,t,s])=>`<div class="grow-row" style="--inset:66px;gap:14px;padding:12px 16px">${tile(k,ACCBG,ACC,36,9,20)}<div class="grow"><div class="hl">${t}</div><div class="fn sec">${s}</div></div></div>`).join('')}</div>
+  <div class="row g12" style="align-items:flex-start;background:${OKBG};border-radius:14px;padding:14px 16px">${tile('lock','#fff',OK,36,9,19)}<div class="grow"><div class="hl">Your videos stay private</div><div class="fn sec">Only Crestline sees them, only to prepare your quote. They’re deleted after your move.</div></div></div>
+ </div></div><div class="foot">${btn('Allow camera and start','camera','primary','camera')}${btn('I’ll do it later','toast:We’ll text you a reminder tonight','plain')}</div>`},
+ rooms:{html:()=>{const done=ROOMS.filter(r=>S.done.has(r.id));const next=ROOMS.find(r=>!S.done.has(r.id));const n=done.length;const all=n===5;const C=2*Math.PI*23;
+  const vol=done.reduce((a,r)=>a+r.vol,0),items=done.reduce((a,r)=>a+r.count,0);const left=ROOMS.filter(r=>!S.done.has(r.id)).length*2;
+  return `<div class="body"><div class="stack g16" style="padding:12px 16px 24px">
+  <div class="stack g8"><div class="row"><span class="lt grow">Your move</span><span class="tile fnS" style="width:36px;height:36px;border-radius:18px;background:#E5E5EA;color:#6E6E73">IB</span></div><span class="row g6 fn sec" style="background:#E9E9EE;border-radius:13px;padding:4px 10px;align-self:flex-start">${ic('truck',14,SEC)}Chicago → Denver  ·  Thu, 14 Nov</span></div>
+  <div class="card stack g14" style="padding:16px;gap:14px"><div class="row g14" style="gap:14px"><div class="ringbox"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="#E5E5EA" stroke-width="4"/><circle cx="26" cy="26" r="23" fill="none" stroke="${OK}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C*n/5} ${C}" transform="rotate(-90 26 26)"/></svg><span class="num">${n}/5</span></div><div class="grow"><div class="hl">${all?'All 5 rooms done':`${n} of 5 rooms done`}</div><div class="fn sec num">${n===0?'About 10 minutes in total':all?`${items} items  ·  ≈ ${vol} cu ft`:`≈ ${vol} cu ft so far  ·  about ${left} min to go`}</div></div></div>
+   <div class="bars">${ROOMS.map(r=>`<i class="${S.done.has(r.id)?'done':r===next?'next':''}"></i>`).join('')}${ROOMS.map(r=>`<b class="${r===next?'next':''}">${r.short}</b>`).join('')}</div></div>
+  ${all?`<button class="upnext" data-act="go:q1">${tile('sparkle',ACCBG,ACC,44,12,24)}<div class="grow"><div class="c2 acc">Up next</div><div class="hl">A few quick questions</div><div class="fn sec">About a minute, then your summary.</div></div>${ic('chevR',16,'#AEAEB2',2.2)}</button>`
+   :`<button class="upnext" data-act="scan:${next.id}">${tile(next.icon,ACCBG,ACC,44,12,24)}<div class="grow"><div class="c2 acc">Up next</div><div class="hl">${next.name}</div><div class="fn sec">${next.tip}</div></div>${ic('chevR',16,'#AEAEB2',2.2)}</button>`}
+  <div class="row" style="padding:0 4px"><span class="t3 grow">All rooms</span><button class="fn acc" style="font-size:15px" data-act="toast:Add any room while filming">Add room</button></div>
+  <div class="group">${ROOMS.map(r=>{const d=S.done.has(r.id);return `<button class="grow-row" style="--inset:60px;min-height:60px" data-act="scan:${r.id}">${tile(r.icon,r.tc,r.tf,32,8,18)}<div class="grow"><div class="bd">${r.name}</div><div class="fn ${!d&&r.id==='garage'?'warnc':'sec'} num">${d?`${r.count} items · ${r.vol} cu ft`:r.id==='garage'?'Often forgotten':'Not scanned yet'}</div></div>${d?`<span class="check">${ic('check',13,'#fff',3)}</span>`:ic('chevR',16,'#AEAEB2',2.2)}</button>`}).join('')}</div>
+ </div></div><div class="foot">${all?btn('Continue','go:q1'):btn('Scan '+next.name.toLowerCase().replace('’','’'),'scan:'+next.id,'primary','camera')}</div>`}},
+ scan:{cls:'cam',dark:true,html:id=>{const r=ROOMS.find(x=>x.id===id);const sc=r.scene;
+  const vsrc=S.videos[id]||S.video;
+  return `<div class="scene" id="scene">${S.stream||vsrc?`<video id="camv" autoplay playsinline muted loop></video>`:`<div class="wall" style="background:${sc.wall}"></div><div class="floor" style="background:${sc.floor}"></div><div class="win" style="left:${sc.win[0]}%;top:${sc.win[1]}%;width:${sc.win[2]}%;height:${sc.win[3]}%"></div>${sc.f.map(f=>`<div class="f" style="left:${f[0]}%;top:${f[1]}%;width:${f[2]}%;height:${f[3]}%;background:${f[4]}"></div>`).join('')}`}<div class="shade"></div></div>
+  ${r.dets.map((d,i)=>`<div class="det ${d[5]?'warn':''}" id="det${i}" style="left:${d[1]}%;top:${d[2]}%;--w:${d[3]}px;--h:${d[4]}px"><div class="box"></div><div class="tag">${d[0]}</div></div>`).join('')}
+  <div class="camtop"><div class="row" style="width:100%"><button class="x" data-act="back" aria-label="Close">${ic('x',18,'#fff',2.4)}</button><div class="center grow" data-act="vidpick" style="cursor:default"><div class="hl">${r.name}</div><div class="fn num" style="opacity:.85"><span id="recd" hidden class="recdot"></span><span id="tm">0:00</span></div></div><span style="width:36px"></span></div><div class="pill" id="hint">${S.stream||vsrc?'Tap record and walk slowly around the room':'Tap record to film the room with your camera'}</div></div>
+  <div class="camsheet"><div class="row"><span class="hl num" id="cnt">0 items</span><span class="fn" id="chk" style="margin-left:8px;color:#FFB54D"></span><span class="fn num grow" style="text-align:right;opacity:.85" id="vol">≈ 0 cu ft</span></div>
+   <div class="chips" id="chips"></div>
+   <div class="camctl"><div class="side"><button class="row g4 fn" style="color:#fff" data-act="toast:Say or type what the camera missed">${ic('plus',16,'#fff',2)}Add item</button></div><button class="rec" id="rec" data-act="rec" aria-label="Record"><i></i></button><div class="side"><button class="donebtn" data-act="scandone:${id}">Done</button></div></div></div>`},
+  after:(el,id)=>{const v=el.querySelector('#camv');if(v){if(S.stream){v.srcObject=S.stream;}else if(S.videos[id]||S.video){v.src=S.videos[id]||S.video;}v.play().catch(()=>{});}scanState={id,on:false,t:0,shown:0,n:0,vol:0,finished:false};}},
+ review:{html:id=>{const r=ROOMS.find(x=>x.id===id);const bed=id==='bedroom';
+  const rows=r.items.map(([n,k,size,v,q,tags=[]])=>`<div class="grow-row" style="--inset:60px;min-height:60px">${tile(k,BG,SEC,32,8,18)}<div class="grow"><div class="bd">${n}</div><div class="row g6 fn sec" style="flex-wrap:wrap">${size} · ${v} cu ft${q>1?' each':''}${tags.filter(t=>!t.endsWith('?')).map(t=>`<span class="tag2 ${t==='Fragile'?'red':t==='High value'?'amber':'blue'}">${t}</span>`).join('')}</div></div><div class="stepper" style="height:28px"><button style="width:30px;height:28px" aria-label="Less">${ic('minus',14,'#1D1D1F',2)}</button><span class="num fnS">${q}</span><button style="width:30px;height:28px" aria-label="More">${ic('plus',14,'#1D1D1F',2)}</button></div></div>`).join('');
+  return `${nav('Rooms','<span class="hl">'+r.name+'</span>',['Edit','toast:Tap any number to change it'])}<div class="body"><div class="stack g16" style="padding:8px 16px 24px">
+  <div class="card row g12" style="padding:14px 16px">${tile('play','#3A3A3C','#fff',56,10,22)}<div class="grow"><div class="fnS acc row g4">${ic('sparkle',13,ACC,2.2)}AI draft · 0:${r.secs} video</div><div class="t3 num">${r.count} items · ≈ ${r.vol} cu ft</div><div class="fn sec">${bed?'Check 2 items. A coordinator reviews the rest before your quote.':'A coordinator reviews this list before your quote.'}</div></div></div>
+  ${bed?`<div class="lbl" style="padding:0 16px">Needs your check <span class="tag2 amber" style="margin-left:4px">2</span></div>
+   <div class="qbox"><div class="row g12">${tile('drawer',S.bedQ.dresser?'#FFF1E0':BG,WARN,40,10,22)}<div class="grow"><div class="hl">Dresser or chest of drawers?</div><div class="fn sec">Partly behind the door at 0:31</div></div></div><div class="seg">${['Dresser','Chest of drawers','Neither'].map(o=>`<button class="${S.bedQ.dresser===o?'sel':''}" data-act="bq:dresser:${o}">${o}</button>`).join('')}</div></div>
+   <div class="qbox"><div class="row g12">${tile('mirror','#FFF1E0',WARN,40,10,22)}<div class="grow"><div class="hl">Is the mirror moving with you?</div><div class="fn sec">It looks wall-mounted</div></div></div><div class="seg">${['Moving','Staying'].map(o=>`<button class="${S.bedQ.mirror===o?'sel':''}" data-act="bq:mirror:${o}">${o}</button>`).join('')}</div></div>
+   <div class="lbl" style="padding:4px 16px 0">Looks right</div>`:`<div class="lbl" style="padding:0 16px">Looks right</div>`}
+  <div class="group">${rows}</div></div></div>
+  <div class="foot" style="flex-direction:row;align-items:center;gap:12px"><div class="stack"><span class="fnS num">${r.count} items</span><span class="fn sec num">≈ ${r.vol} cu ft</span></div><div class="grow">${btn('Confirm '+r.name.toLowerCase(),'confirm:'+id)}</div></div>`}},
+ q1:{html:()=>`${helperNav(1)}<div class="body"><div class="thread">
+  ${AB('That’s all 5 rooms. I counted 76 items, about 620 cu ft.')}${AB('Before Sam prices your move, I have 4 quick questions. It takes about a minute.')}
+  ${QC('Maybe missed',WARN,'search','I didn’t see a washer or dryer. Are they coming with you?','Most homes like yours have them. If they’re somewhere you didn’t film, just tell me where.',
+   `<div class="row g8">${['Washer','Dryer'].map(n=>`<div class="row g8 grow" style="background:${BG};border-radius:12px;padding:8px 12px 8px 8px">${tile('washer','#fff',SEC,32,8,18)}<div><div class="fnS">${n}</div><div class="cap sec">Large · 10 cu ft</div></div></div>`).join('')}</div>
+   <div class="stack g8">${['Yes, both','Only the washer','No, they’re staying'].map(o=>`<button class="btn opt" data-act="q1:${o}">${o}</button>`).join('')}</div>`)}
+ </div></div>${composer()}`},
+ q2:{html:()=>{const F=S.frag;const tiles=[['tv','tv','TV, 55 inch','Bedroom'],['mirror','mirror','Floor mirror','Bedroom'],['lamps','lamp','Table lamps','2 lamps'],['glass','wine','Glassware','2 boxes'],['art','frame','Artwork','3 pieces']];
+  const t=totals();
+  return `${helperNav(2)}<div class="body"><div class="thread">${UB(S.q1)}${CONF(S.q1==='Yes, both'?'Added a washer and dryer to Garage & storage':S.q1==='Only the washer'?'Added a washer to Garage & storage':'Noted, nothing added','back')}
+  ${QC('Extra care',ACC,'wine','Which of these need extra care?','I picked what looks fragile. Tap to change.',`<div class="items3">${tiles.map(([key,k,n,s])=>`<button class="it ${F[key]?'sel':''}" data-act="frag:${key}">${tile(k,'#fff',F[key]?ACC:SEC,30,8,17)}<div><div class="fnS">${n}</div><div class="cap sec">${s}</div></div><span class="mk">${F[key]?`<span class="badge" style="width:18px;height:18px">${ic('check',11,'#fff',3)}</span>`:'<span class="ring0" style="width:18px;height:18px"></span>'}</span></button>`).join('')}<button class="it add" data-act="toast:Say or type it in the message box">${tile('plus','#E9E9EE',SEC,30,8,17)}<div class="fnS sec">Something else</div></button></div>
+   <div class="row g8" style="background:#FFF1E0;border-radius:12px;padding:10px 12px">${ic('gem',16,WARN,2)}<span class="fnM grow">TV, 55 inch is marked high value</span><button class="fnS acc" data-act="toast:Mark more high-value items in the full version">Change</button></div>
+   ${btn('Done · '+t.fr+' items','go:q3')}`)}</div></div>${composer()}`}},
+ q3:{html:()=>{const t=totals();const sel=Object.keys(S.frag).filter(k=>S.frag[k]);const names={tv:'TV',mirror:'mirror',lamps:'lamps',glass:'glassware',art:'artwork'};const list=sel.map(k=>names[k]);const said=list.length?list.slice(0,-1).join(', ')+(list.length>1?' and ':'')+list.slice(-1):'None of them';
+  const items=[['bed','bed','Queen bed','Bedroom'],['wardrobe','wardrobe','Wardrobe','Bedroom'],['bunk','bunk','Bunk bed','Kids’ room'],['table','table','Dining table','Kitchen']];
+  return `${helperNav(3)}<div class="body"><div class="thread">${UB(said.charAt(0).toUpperCase()+said.slice(1))}${CONF(`${t.fr} items marked fragile, 1 high value`,'back')}
+  ${QC('Taking apart',ACC,'tool','Who will take these apart?','If our crew does it, Sam adds about 20 minutes per item to the quote.',`<div class="stack">${items.map(([key,k,n,rm],i)=>`<div class="row g10" style="padding:10px 0;${i?'border-top:.5px solid #E3E3E8':''}">${tile(k,BG,SEC,32,8,18)}<div class="grow"><div class="subM">${n}</div><div class="cap sec">${rm}</div></div><div class="seg" style="width:166px">${['I will','Crew','No need'].map(o=>`<button class="${S.apart[key]===o?'sel':''}" data-act="apart:${key}:${o}" style="font-size:12px">${o}</button>`).join('')}</div></div>`).join('')}</div>${btn('Done','go:q4')}`)}</div></div>${composer()}`}},
+ q4:{html:()=>{const t=totals();const crew=Object.entries(S.apart).filter(([k,v])=>v==='Crew').map(([k])=>({bed:'bed',wardrobe:'wardrobe',bunk:'bunk bed',table:'table'})[k]);const mine=Object.entries(S.apart).filter(([k,v])=>v==='I will').map(([k])=>({bed:'the bed',wardrobe:'the wardrobe',bunk:'the bunk bed',table:'the table'})[k]);
+  const said=[crew.length?'Crew: '+crew.join(' and ')+'.':'',mine.length?'I’ll do '+mine.join(' and ')+'.':''].filter(Boolean).join(' ')||'Nothing needs taking apart.';
+  const bars=[6,10,16,12,20,14,8,18,22,12,9,15,19,11,7,13,17,10,6,12,8,5];
+  return `${helperNav(4)}<div class="body" id="q4body"><div class="thread">${UB(said)}${CONF(`${t.ap} item${t.ap===1?'':'s'} to take apart`,'back')}
+  ${AB('Last one. Anything tricky I should know about? Parking, narrow stairs, a piano, a safe…')}
+  ${S.voice?`<div class="ub" style="padding:10px 14px 12px 12px;display:flex;flex-direction:column;gap:8px"><div class="row g8"><span class="tile" style="width:26px;height:26px;border-radius:13px;background:#fff">${ic('play',12,ACC,2.4)}</span><span class="wave">${bars.map(h=>`<i style="height:${h}px"></i>`).join('')}</span><span class="fnM">0:07</span></div><div class="fn" style="color:#DCE9FF;max-width:230px">“The street is permit parking only, and the stairs down to the garage are narrow.”</div></div>
+   ${QC('Noted for the crew',OK,'truck','Got it. Sam will plan for both.','',[['pin','Parking permit needed at pickup'],['stairs','Narrow stairs to the garage']].map(([k,l])=>`<div class="row g10">${tile(k,OKBG,OK,28,8,16)}<span class="sub">${l}</span></div>`).join(''))}`
+   :`<div class="fn sec center" style="padding-top:4px">Hold the mic to answer, or tap it for the demo.</div>`}
+ </div></div>${S.voice?`<div class="foot"><div class="row g6 fn sec" style="justify-content:center">${ic('check',14,OK,2.6)}<b class="fnS" style="color:#1D1D1F">All set</b><span class="num">· ${t.items} items · ≈ ${t.vol} cu ft · 2 crew notes</span></div>${btn('See your summary','go:ready')}</div>`:composer()}`},
+  after:(el,a,re)=>{const b=el.querySelector('#q4body');if(b&&S.voice)b.scrollTop=b.scrollHeight;}},
+ ready:{html:()=>{const t=totals();return `${nav('Back')}<div class="body"><div class="stack g20" style="padding:8px 16px 24px">
+  <div class="tile" style="width:56px;height:56px;border-radius:28px;background:${OK};margin:12px auto 0">${ic('check',30,'#fff',3)}</div>
+  <div class="stack g8 center"><div class="t1">Ready for your quote</div><div class="sub sec">Here’s what we’ll send to Crestline. A coordinator checks it against your videos.</div></div>
+  <div class="card" style="display:grid;grid-template-columns:repeat(3,1fr);padding:16px 0">${[[5,'rooms'],[t.items,'items'],[t.vol,'cu ft']].map(([v,l],i)=>`<div class="center" style="${i?'border-left:.5px solid #E3E3E8':''}"><div class="t1 num">${v}</div><div class="fn sec">${l}</div></div>`).join('')}</div>
+  <div class="card row g12" style="padding:14px 16px">${tile('truck',ACCBG,ACC,40,10,22)}<div class="grow"><div class="hl">Fits a 26 ft truck</div><div class="fn sec">About 45% full, with room to spare</div><div style="height:6px;border-radius:3px;background:#E5E5EA;margin-top:8px;overflow:hidden"><div style="width:45%;height:100%;background:${ACC}"></div></div></div></div>
+  <div class="stack g8"><div class="lbl" style="padding-bottom:0">Special handling</div><div class="group">${[['wine','#FFE9E7','#D12B1F','Fragile','Lamps, mirror, TV, glassware',t.fr],['tool',ACCBG,ACC,'Take apart','Beds and wardrobe',t.ap],['gem','#FFF1E0',WARN,'High value','TV, 55 inch',1]].map(([k,bg,fg,n,s,v])=>`<div class="grow-row" style="--inset:60px">${tile(k,bg,fg,32,8,18)}<div class="grow"><div class="bd">${n}</div><div class="fn sec">${s}</div></div><span class="bd sec num">${v}</span></div>`).join('')}</div></div>
+ </div></div><div class="foot">${btn('Send to Crestline','go:sent')}${btn('Review rooms','go:rooms','tinted')}</div>`}},
+ sent:{cls:'white',html:()=>{const t=totals();return timeline('Sent to Sam','Thanks, Ihor. Sam will check your list against your videos and text you a quote by tomorrow, 5 pm.',[['done','Inventory sent',`Just now · ${t.items} items, ≈ ${t.vol} cu ft`],['now','Sam checks your videos','Today'],['next','Your quote arrives by text','By tomorrow, 5 pm'],['next','Book your date','A deposit holds Thu, 14 Nov']],'Need to change something? Edit rooms until Sam starts.',btn('Done','go:smsquote')+btn('Call Sam','toast:Calling Sam, (312) 555-0148','plain'))}},
+ smsquote:{cls:'white',html:()=>sms(true),after:el=>{const b=el.querySelector('.body');b.scrollTop=b.scrollHeight;}},
+ quote:{html:()=>`<div class="body"><div class="stack g16" style="padding:14px 16px 24px">
+  <div class="row g8" style="padding-left:8px"><span class="tile" style="width:28px;height:28px;border-radius:8px;background:${ACC}">${ic('house',16,'#fff',2)}</span><span class="subS">Crestline Moving</span></div>
+  <div class="stack g4" style="padding:0 8px"><div class="t1">Your quote</div><div class="sub sec">Checked by Sam against your videos</div></div>
+  <div class="price"><div><div class="num" style="font-size:44px;font-weight:700;letter-spacing:-.5px;line-height:52px">$3,480</div><div class="fn" style="color:#D6E6FF">Fixed price, nothing added on the day</div></div><div class="stat3">${[['cal','Thu, 14 Nov'],['user','3 movers'],['truck','26 ft truck']].map(([k,l])=>`<div>${ic(k,18,'#fff',2)}${l}</div>`).join('')}</div></div>
+  <div class="card" style="padding:14px 0 8px"><div class="c2 sec" style="padding:0 16px 4px">What’s included</div>${['Loading, transport and unloading','Packing for 6 fragile items','Taking apart the bed and wardrobe','Parking permit at pickup','Extra cover for your TV'].map(l=>`<div class="row g10" style="padding:8px 16px">${ic('check',16,OK,2.4)}<span class="sub">${l}</span></div>`).join('')}</div>
+  <button class="card row g12" style="padding:12px 14px 12px 16px;text-align:left" data-act="go:ready">${tile('list',ACCBG,ACC,32,8,18)}<div class="grow"><div class="subS">Your inventory</div><div class="fn sec">5 rooms · 78 items · ≈ 640 cu ft</div></div>${ic('chevR',16,'#AEAEB2',2.2)}</button>
+ </div></div><div class="foot">${btn('Book with a $350 deposit','go:booked')}${btn('Questions? Call Sam','toast:Calling Sam, (312) 555-0148','plain')}</div>`},
+ booked:{cls:'white',html:()=>timeline('You’re booked','Thu, 14 Nov is yours. Crestline will move you from Chicago to Denver for a fixed $3,480.',[['done','Deposit paid','$350 today · $3,130 on moving day'],['now','Sam confirms the details','Call on Mon, 11 Nov'],['next','Packing for fragile items','Wed, 13 Nov, the day before'],['next','Moving day','Thu, 14 Nov · crew arrives 8–10 am']],'Moving something new? Add it until Mon, 11 Nov.',btn('Add to Calendar','toast:Added to your calendar')+btn('Start the demo again','restart','plain'))}
+};
+function timeline(title,sub,steps,note,foot){return `<div class="body"><div class="stack g28" style="padding:64px 24px 24px">
+ <div class="stack g16"><div class="hero">${ic('check',44,OK,2.6)}</div><div class="stack g8 center"><div class="t1">${title}</div><div class="bd sec" style="line-height:24px">${sub}</div></div></div>
+ <div class="tl">${steps.map(([st,t,s],i)=>`<div class="tlr"><div class="rail"><span class="dot ${st}">${st==='done'?ic('check',13,'#fff',3):st==='now'?`<i style="width:8px;height:8px;border-radius:4px;background:${ACC}"></i>`:''}</span>${i<steps.length-1?`<i class="${st==='done'?'done':''}"></i>`:''}</div><div style="padding-top:1px"><div class="${st==='next'?'subM sec':'subS'}">${t}</div><div class="fn sec">${s}</div></div></div>`).join('')}</div>
+ <div class="fn sec center">${note}</div></div></div><div class="foot" style="background:#fff">${foot}</div>`;}
+
+// ---------- scan logic ----------
+let scanState=null;
+function startRec(){const st=scanState;if(!st||st.on)return;const r=ROOMS.find(x=>x.id===st.id);st.on=true;cur.querySelector('#rec').classList.add('on');cur.querySelector('#recd').hidden=false;
+ const hint=cur.querySelector('#hint');hint.textContent=(!S.stream&&S.videos[r.id])?'Finding items in your video…':r.id==='bedroom'?'Pan slowly toward the wardrobe':'Keep going, slow and steady';
+ timers.push(setInterval(()=>{st.t++;const m=Math.floor(st.t/60),s=String(st.t%60).padStart(2,'0');const tm=cur.querySelector('#tm');if(tm)tm.textContent=m+':'+s;},1000));
+ const steps=12;let k=0;timers.push(setInterval(()=>{if(st.finished)return;k++;showDet(Math.floor(k*r.dets.length/steps)-1);setCount(Math.round(r.count*k/steps),Math.round(r.vol*k/steps));
+  if(k>=steps){finishScan();}},800));}
+function showDet(upto){const r=ROOMS.find(x=>x.id===scanState.id);for(let i=0;i<=upto&&i<r.dets.length;i++){const d=cur.querySelector('#det'+i);if(d&&!d.classList.contains('on')){d.classList.add('on');const c=document.createElement('span');c.className='chip'+(r.dets[i][5]?' warn':'');const it=r.items.find(x=>x[0].toLowerCase().startsWith(r.dets[i][0].replace('?','').toLowerCase().slice(0,4)))||r.items[i];c.innerHTML=ic(it[1],20,'#fff');cur.querySelector('#chips').appendChild(c);if(r.dets[i][5])cur.querySelector('#chk').textContent='1 to check';}}}
+function setCount(n,v){const c=cur.querySelector('#cnt');if(c)c.textContent=n+(n===1?' item':' items');const vv=cur.querySelector('#vol');if(vv)vv.textContent='≈ '+v+' cu ft';}
+function finishScan(){const st=scanState;const r=ROOMS.find(x=>x.id===st.id);st.finished=true;showDet(99);setCount(r.count,r.vol);const h=cur.querySelector('#hint');if(h)h.textContent='Looks complete. Tap Done when you’re finished.';}
+
+// ---------- camera ----------
+async function askCamera(){
+ if(S.stream){go('rooms');return;}
+ if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+  try{S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});go('rooms');return;}catch(e){}
+ }
+ fakeAlert();
+}
+function fakeAlert(){const d=document.createElement('div');d.className='dim';d.innerHTML=`<div class="alert"><div style="padding:20px 16px 18px" class="hl">“crestline.com” Would Like to Access the Camera</div><div class="ab2"><button data-act="alert-cancel">Cancel</button><button data-act="alert-allow">Allow</button></div></div><div class="hint">Tap Allow so you can film your rooms. You can turn the camera off anytime in Settings.</div>`;phone.appendChild(d);}
+
+// ---------- actions ----------
+const vp=document.getElementById('vidpick'),vc=document.getElementById('vidcap');
+vc.addEventListener('change',()=>{const f=vc.files&&vc.files[0];if(!f||curName!=='scan')return;S.videos[scanState.id]=URL.createObjectURL(f);rerender();const h=cur.querySelector('#hint');if(h)h.textContent='Finding items in your video…';setTimeout(startRec,500);});
+vp.addEventListener('change',()=>{const f=vp.files&&vp.files[0];if(!f)return;S.video=URL.createObjectURL(f);toast('Room video loaded');if(curName==='scan')rerender();});
+phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||t.disabled)return;const a=t.dataset.act;if(!a)return;const [cmd,...rest]=a.split(':');const arg=rest.join(':');
+ switch(cmd){
+  case 'back':if(curName==='scan'||curName==='review'||curName.startsWith('q')&&!['q2','q3','q4'].includes(curName)){go('rooms',null,true);}else goBack();break;
+  case 'go':go(arg);break;
+  case 'open-welcome':go('welcome');break;
+  case 'open-quote':go('quote');break;
+  case 'toast':toast(arg);break;
+  case 'home':S.home=arg;rerender();break;
+  case 'beds':S.beds=Math.max(0,Math.min(6,S.beds+Number(arg)));rerender();break;
+  case 'stairs':S.stairs=!S.stairs;rerender();break;
+  case 'camera':askCamera();break;
+  case 'alert-cancel':t.closest('.dim').remove();toast('You can allow the camera when you’re ready');break;
+  case 'alert-allow':t.closest('.dim').remove();go('rooms');break;
+  case 'scan':go('scan',arg);break;
+  case 'rec':if(scanState&&!scanState.on&&!S.stream&&!S.videos[scanState.id]&&!S.video){vc.value='';vc.click();}else if(scanState&&!scanState.on)startRec();else if(scanState&&!scanState.finished)finishScan();break;
+  case 'scandone':if(scanState&&!scanState.finished){scanState.finished=true;}go('review',arg);break;
+  case 'vidpick':{const now=Date.now();if(now-(t._last||0)<400){vp.click();}t._last=now;break;}
+  case 'bq':{const [k,v]=arg.split(':');S.bedQ[k]=v;rerender();break;}
+  case 'confirm':S.done.add(arg);go('rooms');hist=[];toast(ROOMS.find(r=>r.id===arg).name+' saved');break;
+  case 'q1':S.q1=arg;go('q2');break;
+  case 'frag':S.frag[arg]=S.frag[arg]?0:1;rerender();break;
+  case 'apart':{const [k,v]=arg.split(':');S.apart[k]=v;rerender();break;}
+  case 'mic':if(curName==='q4'&&!S.voice){t.classList.add('live');setTimeout(()=>{S.voice=true;rerender();},1400);}else toast('Hold to talk, or tap an answer');break;
+  case 'restart':restart();break;
+ }
+});
+function restart(){S.done=new Set();S.q1=null;S.voice=false;S.frag={tv:1,mirror:1,lamps:1,glass:1,art:0};S.apart={bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'};hist=[];curName='';go('sms');}
+// dev shortcut: open #rooms, #q1, #ready etc. to jump straight to a stage
+const start=(location.hash||'').slice(1);
+if(start==='q1'||start==='ready'||start==='quote'){ROOMS.forEach(r=>S.done.add(r.id));S.q1='Yes, both';}
+if(start==='rooms2'){S.done.add('living');S.done.add('kitchen');}
+go(SCREENS[start]&&start!=='scan'&&start!=='review'?start:start==='rooms2'?'rooms':'sms');
+})();
+</script>
+</body></html>
