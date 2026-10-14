@@ -19,6 +19,7 @@ button:focus-visible,[data-act]:focus-visible{outline:2px solid var(--acc);outli
 #stage{height:100%;display:flex;align-items:center;justify-content:center}
 .phone{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
 .sb{display:none}
+@media not ((min-width:520px) and (min-height:700px)){body{background:var(--top,#F2F2F7)}.smshead{box-shadow:0 calc(-1 * env(safe-area-inset-top,0px)) 0 0 #F7F7F9}}
 @media (min-width:520px) and (min-height:700px){
   .phone{width:393px;height:852px;max-height:calc(100% - 32px);border-radius:52px;box-shadow:0 0 0 10px #111,0 30px 80px rgba(0,0,0,.25)}
   .sb{display:flex;position:absolute;left:0;right:0;top:0;height:50px;z-index:50;align-items:center;justify-content:space-between;padding:6px 32px 0 40px;font-weight:600;font-size:16px;pointer-events:none}
@@ -290,11 +291,13 @@ function swapBody(el,old,back,grp){
    if(grp==='onb'&&!back&&!RM){const on=el.querySelectorAll('.prog i.on');const seg=on[on.length-1];if(seg){seg.style.transformOrigin='left center';seg.animate([{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:300,easing:ease});}}
   }catch(e){}
 }
+function setTop(def,name){const c=def.dark?'#000000':/^sms/.test(name)?'#F7F7F9':def.cls&&/\bwhite\b/.test(def.cls)?'#FFFFFF':'#F2F2F7';document.documentElement.style.setProperty('--top',c);let m=document.querySelector('meta[name=theme-color]');if(!m){m=document.createElement('meta');m.name='theme-color';document.head.appendChild(m);}m.content=c;}
 function go(name,arg,back){
   clearTimers();
   const def=SCREENS[name];const el=document.createElement('section');
   el.className='scr '+(def.cls||'');el.innerHTML=def.html(arg);
   el.dataset.name=name;
+  try{setTop(def,name);}catch(e){}
   sb.classList.toggle('dark',!!def.dark);
   const old=cur;const shared=!!(old&&GROUP[name]&&GROUP[name]===GROUP[curName]);
   if(old&&!shared){el.classList.add(back?'back-enter':'enter');}
