@@ -185,6 +185,15 @@ button:focus-visible,[data-act]:focus-visible{outline:2px solid var(--acc);outli
 .alert .ab2{display:flex;border-top:.5px solid rgba(60,60,67,.29)}
 .alert .ab2 button{flex:1;height:44px;color:#007AFF;font-size:17px}
 .alert .ab2 button+button{border-left:.5px solid rgba(60,60,67,.29);font-weight:600}
+.dim.sheetdim{justify-content:flex-end;align-items:stretch;gap:0}
+.sheet{background:#fff;border-radius:14px 14px 0 0;padding:8px 20px 34px;display:flex;flex-direction:column;gap:16px;animation:up .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(100%)}}
+.grab{width:36px;height:5px;border-radius:3px;background:#C7C7CC;align-self:center}
+.radio{width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px #C7C7CC}
+.radio.on{background:var(--acc);box-shadow:none}
+.slots{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 14px}
+.slot{padding:8px 12px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #E3E3E8;font-size:15px;font-weight:500;letter-spacing:-.23px}
+.slot.sel{background:var(--acc);color:#fff;box-shadow:none}
 .hint{width:270px;background:rgba(28,28,30,.9);color:#fff;border-radius:14px;padding:12px 16px;font-size:15px;line-height:20px;text-align:center}
 /* misc */
 .toast{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);background:rgba(28,28,30,.92);color:#fff;border-radius:14px;padding:10px 16px;font-size:14px;z-index:80;white-space:nowrap;animation:fade .2s}
@@ -250,7 +259,7 @@ const ALL_ROOMS=[
 ALL_ROOMS.forEach(r=>{r.count=r.items.reduce((a,i)=>a+i[4],0);r.vol=Math.round(r.items.reduce((a,i)=>a+i[3]*i[4],0));});
 
 const ROOMS=[];function syncRooms(){ROOMS.length=0;ALL_ROOMS.filter(r=>S.rooms.has(r.id)).forEach(r=>ROOMS.push(r));}
-const S={home:'House',rooms:new Set(['living']),stairs:true,done:new Set(),q1:null,frag:{acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1},checks:{dresser:'Dresser',mirror:'Moving',light:'Staying'},clipUrl:null,apart:{shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'},voice:false,stream:null,camTried:false,video:null,videos:{},bedQ:{dresser:'Dresser',mirror:'Moving'}};
+const S={call:{now:false,slot:1},home:'House',rooms:new Set(['living']),stairs:true,done:new Set(),q1:null,frag:{acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1},checks:{dresser:'Dresser',mirror:'Moving',light:'Staying'},clipUrl:null,apart:{shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'},voice:false,stream:null,camTried:false,video:null,videos:{},bedQ:{dresser:'Dresser',mirror:'Moving'}};
 
 // ---------- router ----------
 const phone=document.getElementById('phone'),sb=document.getElementById('sb');
@@ -347,6 +356,7 @@ const SCREENS={
   <div class="stack g6" style="padding:0 8px"><div class="t1">A few tips before you film</div><div class="sub sec">${S.rooms.size>1?'Each room takes about a minute.':'It takes about a minute.'}</div></div>
   <div class="group">${[['bulb','Turn on the lights','Brighter rooms mean fewer missed items'],['drawer','Open closets and cabinets','What’s inside counts toward your quote'],['loop','One slow loop per room','Start at the door and end where you began'],['eyeoff','Skip what’s staying','You can mark items as staying later']].map(([k,t,s])=>`<div class="grow-row" style="--inset:66px;gap:14px;padding:12px 16px">${tile(k,ACCBG,ACC,36,9,20)}<div class="grow"><div class="hl">${t}</div><div class="fn sec">${s}</div></div></div>`).join('')}</div>
   <div class="row g12" style="align-items:flex-start;background:${OKBG};border-radius:14px;padding:14px 16px">${tile('lock','#fff',OK,36,9,19)}<div class="grow"><div class="hl">Your videos stay private</div><div class="fn sec">Only Crestline sees them, only to prepare your quote. They’re deleted after your move.</div></div></div>
+  <button class="card row g12" style="padding:12px 14px 12px 16px;text-align:left;width:100%" data-act="callsheet">${tile('phone',ACCBG,ACC,36,9,20)}<div class="grow"><div class="hl">Prefer a call?</div><div class="fn sec">A 15-min call, no filming needed</div></div>${ic('chevR',16,'#AEAEB2',2.2)}</button>
  </div></div><div class="foot">${btn('Allow camera and start','camera','primary','camera')}${btn('I’ll do it later','toast:We’ll text you a reminder tonight','plain')}</div>`},
  rooms:{html:()=>{const done=ROOMS.filter(r=>S.done.has(r.id));const next=ROOMS.find(r=>!S.done.has(r.id));const n=done.length;const all=n===ROOMS.length;const NR=ROOMS.length;const C=2*Math.PI*23;
   const vol=done.reduce((a,r)=>a+r.vol,0),items=done.reduce((a,r)=>a+r.count,0);const left=ROOMS.filter(r=>!S.done.has(r.id)).length*2;
@@ -410,6 +420,8 @@ const SCREENS={
   <div class="stack g8"><div class="lbl" style="padding-bottom:0">Special handling</div><div class="group">${[['wine','#FFE9E7','#D12B1F','Fragile',fragNames(),t.fr],['tool',ACCBG,ACC,'Take apart',apartNames(),t.ap],['gem','#FFF1E0',WARN,'High value',hv()||'None',hv()?1:0]].map(([k,bg,fg,n,s,v])=>`<div class="grow-row" style="--inset:60px">${tile(k,bg,fg,32,8,18)}<div class="grow"><div class="bd">${n}</div><div class="fn sec">${s}</div></div><span class="bd sec num">${v}</span></div>`).join('')}</div></div>
  </div></div><div class="foot">${btn('Send to Crestline','go:sent')}${ROOMS.length===1?btn('Review '+ROOMS[0].name.toLowerCase(),'scandone:'+ROOMS[0].id,'tinted'):btn('Review rooms','go:rooms','tinted')}</div>`}},
  sent:{cls:'white',html:()=>{const t=totals();return timeline('Sent to Sam','Thanks, Ihor. Sam will check your list against your videos and text you a quote by tomorrow, 5 pm.',[['done','Inventory sent',`Just now · ${t.items} items, ≈ ${t.vol} cu ft`],['now','Sam checks your videos','Today'],['next','Your quote arrives by text','By tomorrow, 5 pm'],['next','Book your date','A deposit holds Thu, 14 Nov']],'Need to change something? Edit your list until Sam starts.',btn('Done','go:smsquote')+btn('Call Sam','toast:Calling Sam, (312) 555-0148','plain'))}},
+ callbooked:{cls:'white',html:()=>{const c=S.call,w=callWhen();return timeline(c.now?'Sam will call you shortly':`Sam will call you ${w.d==='Today'?'':'tomorrow '}at ${w.short}`,'We’ll ring (312) 555-0148. Have your rooms in front of you.',[['done','Call booked',(c.now?'Within 5 minutes':`${w.d}, ${w.t}`)+' · about 15 min'],['now','Sam calls and builds your list','You walk, Sam types'],['next','You check the list','We text you a link after the call'],['next','Your quote arrives by text','Within a day of the call']],'',btn(c.now?'Done':'Add to Calendar',c.now?'toast:Sam is calling you shortly':'toast:Added to your calendar')+btn('Film my rooms instead','camera','plain'),
+  `<button class="row g12" style="background:${ACCBG};border-radius:14px;padding:14px 16px;text-align:left;width:100%" data-act="camera">${tile('camera','#fff',ACC,36,9,20)}<div class="grow"><div class="subS">Make the call shorter</div><div class="fn sec">Film one room first and Sam starts from your video.</div></div><span class="subS" style="color:var(--acc)">Film</span></button>`)}},
  smsquote:{cls:'white',html:()=>sms(true),after:el=>{const b=el.querySelector('.body');b.scrollTop=b.scrollHeight;}},
  quote:{html:()=>{const p=plan(),t=totals(),crew=apartList().filter(a=>S.apart[a[0]]==='Crew').map(a=>APARTN[a[0]]);return `<div class="body"><div class="stack g16" style="padding:14px 16px 24px">
   <div class="row g8" style="padding-left:8px"><span class="tile" style="width:28px;height:28px;border-radius:8px;background:${ACC}">${ic('house',16,'#fff',2)}</span><span class="subS">Crestline Moving</span></div>
@@ -420,10 +432,24 @@ const SCREENS={
  </div></div><div class="foot">${btn('Book with a '+p.fmt(p.dep)+' deposit','go:booked')}${btn('Questions? Call Sam','toast:Calling Sam, (312) 555-0148','plain')}</div>`}},
  booked:{cls:'white',html:()=>{const p=plan();return timeline('You’re booked',`Thu, 14 Nov is yours. Crestline will move you from Chicago to Denver for a fixed ${p.fmt(p.price)}.`,[['done','Deposit paid',`${p.fmt(p.dep)} today · ${p.fmt(p.rest)} on moving day`],['now','Sam confirms the details','Call on Mon, 11 Nov'],['next','Packing for fragile items','Wed, 13 Nov, the day before'],['next','Moving day','Thu, 14 Nov · crew arrives 8–10 am']],'Moving something new? Add it until Mon, 11 Nov.',btn('Add to Calendar','toast:Added to your calendar')+btn('Start the demo again','restart','plain'))}}
 };
-function timeline(title,sub,steps,note,foot){return `<div class="body"><div class="stack g28" style="padding:64px 24px 24px">
+function timeline(title,sub,steps,note,foot,extra=''){return `<div class="body"><div class="stack g28" style="padding:64px 24px 24px">
  <div class="stack g16"><div class="hero">${ic('check',44,OK,2.6)}</div><div class="stack g8 center"><div class="t1">${title}</div><div class="bd sec" style="line-height:24px">${sub}</div></div></div>
  <div class="tl">${steps.map(([st,t,s],i)=>`<div class="tlr"><div class="rail"><span class="dot ${st}">${st==='done'?ic('check',13,'#fff',3):st==='now'?`<i style="width:8px;height:8px;border-radius:4px;background:${ACC}"></i>`:''}</span>${i<steps.length-1?`<i class="${st==='done'?'done':''}"></i>`:''}</div><div style="padding-top:1px"><div class="${st==='next'?'subM sec':'subS'}">${t}</div><div class="fn sec">${s}</div></div></div>`).join('')}</div>
- <div class="fn sec center">${note}</div></div></div><div class="foot" style="background:#fff">${foot}</div>`;}
+ ${extra}${note?`<div class="fn sec center">${note}</div>`:''}</div></div><div class="foot" style="background:#fff">${foot}</div>`;}
+const SLOTS=[['Today','4:30 pm'],['Today','6:00 pm'],['Tomorrow','9:00 am'],['Tomorrow','12:30 pm']];
+const callWhen=()=>{const [d,t]=SLOTS[S.call.slot];return {d,t,short:t.replace(':00','')};};
+function callSheet(){const c=S.call,w=callWhen();return `<div class="sheet" data-act="noop"><span class="grab"></span>
+ <div class="stack g6"><div style="font-size:22px;font-weight:700;letter-spacing:-.26px;line-height:28px">Talk it through with Sam</div><div class="sub sec">Walk round your home with the phone and Sam fills in the list as you go. It takes about 15 minutes.</div></div>
+ <div class="group" style="background:#F2F2F7">
+  <button class="grow-row" style="--inset:66px;gap:14px;padding:12px 16px;width:100%;text-align:left" data-act="cs:now">${tile('phone','#fff',ACC,36,9,20)}<div class="grow"><div class="hl">Call me now</div><div class="fn sec">Usually within 5 minutes</div></div><span class="radio ${c.now?'on':''}">${c.now?ic('check',13,'#fff',3):''}</span></button>
+  <button class="grow-row" style="gap:14px;padding:12px 16px;width:100%;text-align:left" data-act="cs:slot">${tile('clock','#fff',ACC,36,9,20)}<div class="grow"><div class="hl">Pick a time</div><div class="fn sec">Today or tomorrow</div></div><span class="radio ${c.now?'':'on'}">${c.now?'':ic('check',13,'#fff',3)}</span></button>
+  <div class="slots" style="${c.now?'opacity:.4':''}">${SLOTS.map(([d,t],i)=>`<button class="slot ${!c.now&&i===c.slot?'sel':''}" data-act="cs:slot:${i}">${d} ${t}</button>`).join('')}</div>
+ </div>
+ <div class="row g6"><span class="sub sec grow">We’ll call (312) 555-0148</span><button class="sub" style="color:var(--acc)" data-act="toast:We use the number from your booking">Change</button></div>
+ ${btn(c.now?'Call me now':'Book a call for '+(w.d==='Today'?'':'tomorrow ')+w.t,'cs-book')}
+</div>`;}
+function openCallSheet(){const d=document.createElement('div');d.className='dim sheetdim';d.dataset.act='cs-close';d.innerHTML=callSheet();phone.appendChild(d);}
+function redrawCallSheet(){const d=phone.querySelector('.sheetdim');if(!d)return;d.innerHTML=callSheet();d.firstChild.style.animation='none';}
 
 // ---------- scan logic ----------
 let scanState=null;
@@ -478,6 +504,10 @@ phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t|
   case 'stairs':S.stairs=!S.stairs;rerender();break;
   case 'camera':askCamera();break;
   case 'alert-cancel':t.closest('.dim').remove();toast('You can allow the camera when you’re ready');break;
+  case 'callsheet':openCallSheet();break;
+  case 'cs-close':if(e.target===t)t.remove();break;
+  case 'cs':if(arg==='now')S.call.now=true;else{S.call.now=false;if(arg.startsWith('slot:'))S.call.slot=+arg.slice(5);}redrawCallSheet();break;
+  case 'cs-book':phone.querySelector('.sheetdim')?.remove();go('callbooked');break;
   case 'alert-allow':t.closest('.dim').remove();startFilming();break;
   case 'room':{if(S.rooms.has(arg))S.rooms.delete(arg);else S.rooms.add(arg);syncRooms();rerender();break;}
   case 'scan':go('scan',arg);break;
@@ -494,7 +524,7 @@ phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t|
   case 'restart':restart();break;
  }
 });
-function restart(){ALL_ROOMS.forEach(r=>{r.items.forEach((it,i)=>it[4]=r._q[i]);r.count=r._c;r.vol=r._v;});S.done=new Set();S.rooms=new Set(['living']);syncRooms();S.q1=null;S.voice=false;S.frag={acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1};S.checks={dresser:'Dresser',mirror:'Moving',light:'Staying'};S.apart={shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'};hist=[];curName='';go('sms');}
+function restart(){S.call={now:false,slot:1};ALL_ROOMS.forEach(r=>{r.items.forEach((it,i)=>it[4]=r._q[i]);r.count=r._c;r.vol=r._v;});S.done=new Set();S.rooms=new Set(['living']);syncRooms();S.q1=null;S.voice=false;S.frag={acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1};S.checks={dresser:'Dresser',mirror:'Moving',light:'Staying'};S.apart={shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'};hist=[];curName='';go('sms');}
 // dev shortcut: open #rooms, #q1, #ready etc. to jump straight to a stage
 try{fetch('living.mp4').then(r=>r.ok?r.blob():null).then(b=>{if(b&&b.size>1000)S.clipUrl=URL.createObjectURL(b.type==='video/mp4'?b:new Blob([b],{type:'video/mp4'}));}).catch(()=>{});}catch(e){}
 ALL_ROOMS.forEach(r=>{r._q=r.items.map(it=>it[4]);r._c=r.count;r._v=r.vol;});syncRooms();
