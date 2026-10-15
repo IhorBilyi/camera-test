@@ -189,6 +189,8 @@ button:focus-visible,[data-act]:focus-visible{outline:2px solid var(--acc);outli
 .dim.sheetdim{justify-content:flex-end;align-items:stretch;gap:0}
 .sheet{background:#fff;border-radius:14px 14px 0 0;padding:8px 20px 34px;display:flex;flex-direction:column;gap:16px;animation:up .32s cubic-bezier(.2,.8,.2,1)}
 @keyframes up{from{transform:translateY(100%)}}
+.afield{width:100%;box-sizing:border-box;height:44px;border-radius:10px;border:0;background:var(--fill);padding:0 14px;font:inherit;font-size:17px;color:var(--ink);outline:none;-webkit-appearance:none}.afield:focus{box-shadow:0 0 0 2px var(--acc) inset}
+.sugg{padding:6px 12px;border-radius:15px;background:var(--fill);font-size:14px}
 .grab{width:36px;height:5px;border-radius:3px;background:#C7C7CC;align-self:center}
 .radio{width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px #C7C7CC}
 .radio.on{background:var(--acc);box-shadow:none}
@@ -414,7 +416,7 @@ const SCREENS={
   ${r.checks?`<div class="lbl" style="padding:0 16px">Needs your check <span class="tag2 amber" style="margin-left:4px">${r.checks.length}</span></div>
    ${r.checks.map(([k,q,sub,opts,key])=>`<div class="qbox"><div class="row g12">${tile(k,'#FFF1E0',WARN,40,10,22)}<div class="grow"><div class="hl">${q}</div><div class="fn sec">${sub}</div></div></div><div class="seg">${opts.map(o=>`<button class="${S.checks[key]===o?'sel':''}" data-act="bq:${key}:${o}">${o}</button>`).join('')}</div></div>`).join('')}
    <div class="lbl" style="padding:4px 16px 0">Looks right</div>`:`<div class="lbl" style="padding:0 16px">Looks right</div>`}
-  <div class="group">${rows}</div></div></div>
+  <div class="group">${rows}<button class="grow-row" style="--inset:60px;min-height:56px;width:100%;text-align:left" data-act="additem:${id}">${tile('plus',ACCBG,ACC,32,8,18)}<div class="grow"><div class="bd acc">Add an item</div><div class="fn sec">Anything the camera missed</div></div></button></div></div></div>
   <div class="foot" style="flex-direction:row;align-items:center;gap:12px"><div class="stack"><span class="fnS num">${r.count} items</span><span class="fn sec num">≈ ${r.vol} cu ft</span></div><div class="grow">${btn('Confirm '+r.name.toLowerCase(),'confirm:'+id)}</div></div>`}},
  q1:{html:()=>`${helperNav(1)}<div class="body"><div class="thread">
   ${AB(`That’s ${ROOMS.length===1?'your '+ROOMS[0].name.toLowerCase():'all '+ROOMS.length+' rooms'}. I counted ${totals().items-totals().extra} items, about ${totals().vol-totals().xv} cu ft.`)}${AB('Before Sam prices your move, I have 4 quick questions. It takes about a minute.')}
@@ -477,6 +479,17 @@ function callSheet(){const c=S.call,w=callWhen();return `<div class="sheet" data
  <div class="row g6"><span class="sub sec grow">We’ll call (312) 555-0148</span><button class="sub" style="color:var(--acc)" data-act="toast:We use the number from your booking">Change</button></div>
  ${btn(c.now?'Call me now':'Book a call for '+(w.d==='Today'?'':'tomorrow ')+w.t,'cs-book')}
 </div>`;}
+const SIZES=[['Small',3],['Medium',8],['Large',20]];
+function addSheet(){const a=S.add,ok=a.name.trim().length>0,v=SIZES.find(x=>x[0]===a.size)[1];
+ return `<div class="sheet" data-act="noop"><span class="grab"></span>
+ <div class="row"><div class="t3 grow">Add an item</div><button class="fn acc" style="font-size:16px" data-act="as-cancel">Cancel</button></div>
+ <input class="afield" id="addname" type="text" autocomplete="off" enterkeyhint="done" placeholder="What is it? For example, floor lamp" value="${a.name.replace(/"/g,'&quot;')}">
+ <div class="row g6" style="flex-wrap:wrap">${['Floor lamp','Rug','Plant','Bike','Side table'].map(n=>`<button class="sugg" data-act="as-name:${n}">${n}</button>`).join('')}</div>
+ <div class="stack g8"><div class="lbl" style="padding:0">Size</div><div class="seg">${SIZES.map(([n,c])=>`<button class="${a.size===n?'sel':''}" data-act="as-size:${n}">${n} · ${c} cu ft</button>`).join('')}</div></div>
+ <div class="row"><div class="bd grow">How many</div><div class="stepper"><button aria-label="Less" data-act="as-q:-1" ${a.q<2?'disabled':''}>${ic('minus',16,'#1D1D1F',2)}</button><span class="num">${a.q}</span><button aria-label="More" data-act="as-q:1">${ic('plus',16,'#1D1D1F',2)}</button></div></div>
+ <button class="btn primary" data-act="as-add" ${ok?'':'disabled style="opacity:.4"'}>${ok?`Add to list · ≈ ${v*a.q} cu ft`:'Add to list'}</button></div>`;}
+function openAddSheet(rid){S.add={room:rid,name:'',size:'Medium',q:1};const d=document.createElement('div');d.className='dim sheetdim';d.dataset.act='as-close';d.innerHTML=addSheet();phone.appendChild(d);}
+function redrawAdd(){const d=phone.querySelector('.sheetdim');if(d)d.querySelector('.sheet').outerHTML=addSheet();}
 function openCallSheet(){const d=document.createElement('div');d.className='dim sheetdim';d.dataset.act='cs-close';d.innerHTML=callSheet();phone.appendChild(d);}
 function redrawCallSheet(){const d=phone.querySelector('.sheetdim');if(!d)return;d.innerHTML=callSheet();d.firstChild.style.animation='none';}
 
@@ -521,6 +534,8 @@ function fakeAlert(){const d=document.createElement('div');d.className='dim';d.i
 const vp=document.getElementById('vidpick'),vc=document.getElementById('vidcap');
 vc.addEventListener('change',()=>{const f=vc.files&&vc.files[0];if(!f||curName!=='scan')return;S.videos[scanState.id]=URL.createObjectURL(f);rerender();const h=cur.querySelector('#hint');if(h)h.textContent='Finding items in your video…';setTimeout(startRec,500);});
 vp.addEventListener('change',()=>{const f=vp.files&&vp.files[0];if(!f)return;S.video=URL.createObjectURL(f);toast('Room video loaded');if(curName==='scan')rerender();});
+phone.addEventListener('input',e=>{if(e.target.id==='addname'&&S.add){S.add.name=e.target.value;const b=phone.querySelector('[data-act=as-add]');const ok=!!S.add.name.trim();if(b){b.disabled=!ok;b.style.opacity=ok?'':'.4';b.textContent=ok?`Add to list · ≈ ${SIZES.find(x=>x[0]===S.add.size)[1]*S.add.q} cu ft`:'Add to list';}}});
+phone.addEventListener('keydown',e=>{if(e.target.id==='addname'&&e.key==='Enter'){e.target.blur();}});
 phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||t.disabled)return;const a=t.dataset.act;if(!a)return;const [cmd,...rest]=a.split(':');const arg=rest.join(':');
  switch(cmd){
   case 'back':if(curName==='review')go('scan',curArg,true);else if(curName==='q1'){if(ROOMS.length===1)go('review',ROOMS[0].id,true);else go('rooms',null,true);}else if(curName==='scan'&&ROOMS.length>1&&hist.length&&hist[hist.length-1][0]==='rooms')goBack();else goBack();break;
@@ -534,6 +549,14 @@ phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t|
   case 'camera':askCamera();break;
   case 'alert-cancel':t.closest('.dim').remove();toast('You can allow the camera when you’re ready');break;
   case 'callsheet':openCallSheet();break;
+  case 'additem':openAddSheet(arg);break;
+  case 'as-close':if(e.target===t)t.remove();break;
+  case 'as-cancel':phone.querySelector('.sheetdim')?.remove();break;
+  case 'as-name':S.add.name=arg;redrawAdd();break;
+  case 'as-size':S.add.size=arg;redrawAdd();break;
+  case 'as-q':S.add.q=Math.max(1,S.add.q+(+arg));redrawAdd();break;
+  case 'as-add':{const a=S.add;if(!a.name.trim())break;const r=ALL_ROOMS.find(x=>x.id===a.room),v=SIZES.find(x=>x[0]===a.size)[1],nm=a.name.trim().charAt(0).toUpperCase()+a.name.trim().slice(1);
+   r.items.push([nm,'box',a.size,v,a.q,['Added by you']]);r.count+=a.q;r.vol=Math.round((r.vol+v*a.q)*10)/10;phone.querySelector('.sheetdim')?.remove();rerender();const b=cur.querySelector('.body');if(b)b.scrollTop=b.scrollHeight;toast(nm+' added');break;}
   case 'cs-close':if(e.target===t)t.remove();break;
   case 'cs':if(arg==='now')S.call.now=true;else{S.call.now=false;if(arg.startsWith('slot:'))S.call.slot=+arg.slice(5);}redrawCallSheet();break;
   case 'cs-book':phone.querySelector('.sheetdim')?.remove();go('callbooked');break;
@@ -553,10 +576,10 @@ phone.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t|
   case 'restart':restart();break;
  }
 });
-function restart(){S.call={now:false,slot:1};ALL_ROOMS.forEach(r=>{r.items.forEach((it,i)=>it[4]=r._q[i]);r.count=r._c;r.vol=r._v;});S.done=new Set();S.rooms=new Set(['living']);syncRooms();S.q1=null;S.voice=false;S.frag={acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1};S.checks={dresser:'Dresser',mirror:'Moving',light:'Staying'};S.apart={shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'};hist=[];curName='';go('sms');}
+function restart(){S.call={now:false,slot:1};ALL_ROOMS.forEach(r=>{r.items.length=r._n;r.items.forEach((it,i)=>it[4]=r._q[i]);r.count=r._c;r.vol=r._v;});S.done=new Set();S.rooms=new Set(['living']);syncRooms();S.q1=null;S.voice=false;S.frag={acoustic:1,electric:1,bottles:1,power:0,tv:1,mirror:1,lamps:1,glass:1};S.checks={dresser:'Dresser',mirror:'Moving',light:'Staying'};S.apart={shelves:'Crew',desk:'I will',bed:'Crew',wardrobe:'Crew',bunk:'I will',table:'No need'};hist=[];curName='';go('sms');}
 // dev shortcut: open #rooms, #q1, #ready etc. to jump straight to a stage
 try{fetch('living.mp4').then(r=>r.ok?r.blob():null).then(b=>{if(b&&b.size>1000)S.clipUrl=URL.createObjectURL(b.type==='video/mp4'?b:new Blob([b],{type:'video/mp4'}));}).catch(()=>{});}catch(e){}
-ALL_ROOMS.forEach(r=>{r._q=r.items.map(it=>it[4]);r._c=r.count;r._v=r.vol;});syncRooms();
+ALL_ROOMS.forEach(r=>{r._n=r.items.length;r._q=r.items.map(it=>it[4]);r._c=r.count;r._v=r.vol;});syncRooms();
 const start=(location.hash||'').slice(1);
 if(start==='q1'||start==='ready'||start==='quote'){ROOMS.forEach(r=>S.done.add(r.id));S.q1='Yes, both';}
 if(start==='scan')go('scan','living');else go(SCREENS[start]&&start!=='review'?start:'sms');
